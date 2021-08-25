@@ -1,3 +1,3 @@
-module github.com/lstellway/self-signed-ssl
+module github.com/lstellway/acert
 
 go 1.16
