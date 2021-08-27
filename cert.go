@@ -30,7 +30,7 @@ func generateCert() (crypto.PrivateKey, []byte) {
 	if rootCert == "" {
 		exit(1, "No root certificate was specified. Use the `--root` option to specify a signing certificate.")
 	}
-	parent := parsePemCertificate(rootCert)
+	parent := ParsePemCertificate(rootCert)
 
 	// Build private key
 	privateKey, err := GenerateKey(bits)

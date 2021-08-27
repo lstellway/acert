@@ -41,14 +41,14 @@ func parseCrypto(cmd *flag.FlagSet) {
 	cmd.StringVar(&streetAddress, "streetAddress", "", "Street Address\n(eg: 123 Fake Street)")
 	cmd.StringVar(&postalCode, "postalCode", "", "Postal Code (eg, 94016)")
 	cmd.StringVar(&organization, "organization", "", "Organization Name (eg, company)")
-	cmd.StringVar(&organizationalUnit, "organization-unit", "", "Organizational Unit Name (eg, section)")
-	cmd.StringVar(&commonName, "common-name", "", "Certificate common name (required)")
+	cmd.StringVar(&organizationalUnit, "organizationUnit", "", "Organizational Unit Name (eg, section)")
+	cmd.StringVar(&commonName, "commonName", "", "Certificate common name (required)")
 	cmd.StringVar(&email, "email", "", "Email Address")
 
-	cmd.StringVar(&sanDns, "san-dns", "", "Comma-delimited Subject Alternative Names (domain names)")
-	cmd.StringVar(&sanEmail, "san-email", "", "Comma-delimited Subject Alternative Names (email addresses)")
-	cmd.StringVar(&sanIp, "san-ip", "", "Comma-delimited Subject Alternative Names (ip addresses)")
-	cmd.StringVar(&sanUri, "san-uri", "", "Comma-delimited Subject Alternative Names (uniform resource identifier)")
+	cmd.StringVar(&sanDns, "sanDns", "", "Comma-delimited Subject Alternative Names (domain names)")
+	cmd.StringVar(&sanEmail, "sanEmail", "", "Comma-delimited Subject Alternative Names (email addresses)")
+	cmd.StringVar(&sanIp, "sanIp", "", "Comma-delimited Subject Alternative Names (ip addresses)")
+	cmd.StringVar(&sanUri, "sanUri", "", "Comma-delimited Subject Alternative Names (uniform resource identifier)")
 }
 
 // Gets the output file name without an extension attached
@@ -59,6 +59,20 @@ func getOutputPath() string {
 // Generate a private key
 func GenerateKey(bits int) (crypto.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, bits)
+}
+
+// Generate serial number
+func GenerateSerialNumber() *big.Int {
+	// Set limit
+	limit := new(big.Int).Lsh(big.NewInt(1), 128)
+
+	// Generate serial
+	serial, err := rand.Int(rand.Reader, limit)
+	if err != nil {
+		exit(1, "Could not generate serial number.", err)
+	}
+
+	return serial
 }
 
 // Run before building a certificate
@@ -156,7 +170,7 @@ func buildCertificate(ca bool) x509.Certificate {
 
 	template := x509.Certificate{
 		Subject: buildSubject(),
-		SerialNumber: big.NewInt(2019),
+		SerialNumber: GenerateSerialNumber(),
 		NotBefore: now,
 		IsCA: ca,
 		KeyUsage: x509.KeyUsageDigitalSignature,
@@ -181,7 +195,7 @@ func buildCertificate(ca bool) x509.Certificate {
 }
 
 // Parse a pem-encoded certificate file
-func parsePemCertificate(file string) *x509.Certificate {
+func ParsePemCertificate(file string) *x509.Certificate {
 	// Decode signing certificate
 	cert, err := x509.ParseCertificate(PemDecodeFile(file))
 

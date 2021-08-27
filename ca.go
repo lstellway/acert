@@ -40,7 +40,7 @@ func generateCa() (crypto.PrivateKey, []byte) {
 
 	// Get parent certificate
 	if rootCert != "" {
-		parent = parsePemCertificate(rootCert)
+		parent = ParsePemCertificate(rootCert)
 	} else {
 		parent = &cert
 	}
