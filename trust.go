@@ -78,8 +78,8 @@ func Trust(args ...string) {
 	cert := getArg()
 
 	// Check if file exists
-	if FileExists(cert) == false {
-		exit(1, "The specified certificate could not be found.")
+	if !FileExists(cert) {
+		exit(1, "The specified certificate could not be found:", cert)
 	}
 
 	// Execute trust strategy based on OS

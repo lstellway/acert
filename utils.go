@@ -43,15 +43,8 @@ func getArg() (string) {
 
 // Checks if a file exists
 func FileExists(name string) bool {
-	if _, err := os.Stat(name); err == nil {
-		return true
-	} else if os.IsNotExist(err) {
-		exit(1, fmt.Sprintf("File not found: (%s)\n", name), err)
-	} else {
-		exit(1, fmt.Sprintf("File not found: (%s)\n", name), err)
-	}
-
-	return true
+	_, err := os.Stat(name)
+	return err == nil
 }
 
 // Saves file

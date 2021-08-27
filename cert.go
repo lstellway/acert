@@ -14,26 +14,23 @@ func parseCert(input ...string) *flag.FlagSet {
 	cmd.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
 	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate\n(default false)")
 	cmd.StringVar(&rootCert, "root", "", "Root certificate used to sign certificate")
+
+	// Add general crypto flags
 	parseCrypto(cmd)
 
 	cmd.Parse(input)
-	args = flag.Args()
-
-	// Ensure root certificate is provided
-	if rootCert == "" {
-		exit(1, "No root certificate specified")
-	}
+	args = cmd.Args()
 
 	return cmd
 }
 
 // Generates a new certificate authority
 func generateCert() (crypto.PrivateKey, []byte) {
-	// Decode signing certificate
-	parent, err := x509.ParseCertificate(PemDecodeFile(rootCert))
-	if err != nil {
-		exit(1, "Invalid certificate:", rootCert)
+	// Get root signing certificate
+	if rootCert == "" {
+		exit(1, "No root certificate was specified. Use the `--root` option to specify a signing certificate.")
 	}
+	parent := parsePemCertificate(rootCert)
 
 	// Build private key
 	privateKey, err := GenerateKey(bits)

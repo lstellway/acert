@@ -13,26 +13,40 @@ func parseCa(input ...string) *flag.FlagSet {
 	cmd := flag.NewFlagSet("ca", flag.ExitOnError)
 	cmd.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
 	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate")
+	cmd.StringVar(&rootCert, "root", "", "Root certificate used to sign certificate")
+
+	// Add general crypto flags
 	parseCrypto(cmd)
 
 	cmd.Parse(input)
-	args = flag.Args()
+	args = cmd.Args()
 
 	return cmd
 }
 
 // Generates a new certificate authority
 func generateCa() (crypto.PrivateKey, []byte) {
+	var parent *x509.Certificate
+
+	// Generate private key
 	privateKey, err := GenerateKey(bits)
 	if err != nil {
 		exit(1, "Error occurred while generating private key: ", err)
 	}
-
 	publicKey := privateKey.(crypto.Signer).Public()
+
+	// Generate certificate
 	cert := buildCertificate(true)
 
+	// Get parent certificate
+	if rootCert != "" {
+		parent = parsePemCertificate(rootCert)
+	} else {
+		parent = &cert
+	}
+
 	// Create certificate
-	ca, err := x509.CreateCertificate(rand.Reader, &cert, &cert, publicKey, privateKey)
+	ca, err := x509.CreateCertificate(rand.Reader, &cert, parent, publicKey, privateKey)
 	if err != nil {
 		exit(1, "Error occurred while generating certificate authority: ", err)
 	}

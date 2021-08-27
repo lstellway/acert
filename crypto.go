@@ -180,6 +180,18 @@ func buildCertificate(ca bool) x509.Certificate {
 	return template
 }
 
+// Parse a pem-encoded certificate file
+func parsePemCertificate(file string) *x509.Certificate {
+	// Decode signing certificate
+	cert, err := x509.ParseCertificate(PemDecodeFile(file))
+
+	if err != nil {
+		exit(1, "Invalid certificate: ", file)
+	}
+
+	return cert
+}
+
 // Get private key PKCS #8
 func PrivateKeyPkcs(privateKey crypto.PrivateKey) ([]byte) {
 	key, err := x509.MarshalPKCS8PrivateKey(privateKey)

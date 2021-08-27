@@ -10,10 +10,12 @@ import (
 // Parses certificate signing request flag set
 func parseCsr(input ...string) *flag.FlagSet {
 	cmd := flag.NewFlagSet("ca", flag.ExitOnError)
+
+	// Add general crypto flags
 	parseCrypto(cmd)
 
 	cmd.Parse(input)
-	args = flag.Args()
+	args = cmd.Args()
 
 	return cmd
 }
@@ -39,9 +41,11 @@ func generateCsr() (crypto.PrivateKey, []byte) {
 
 // Initializes the certificate signing request subcommand
 func csr(args ...string) {
-	parseCsr(args...)
+	cmd := parseCsr(args...)
 
 	switch getArg() {
+	case "help":
+		cmd.Usage()
 	default:
 		key, ca := generateCsr()
 		filePath := getOutputPath()
