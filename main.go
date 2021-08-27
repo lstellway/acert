@@ -15,11 +15,7 @@ func main() {
 	case "cert":
 		cert(args...)
 	case "trust":
-		if file := getArg(); file != "" {
-			Trust(file)
-		} else {
-			// TODO: Show help
-		}
+		Trust(args...)
 	default:
 		// Help
 	}

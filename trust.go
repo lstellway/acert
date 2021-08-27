@@ -1,13 +1,22 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os/exec"
-	"os"
 	"path"
 	"runtime"
 	"time"
 )
+
+func parseTrust(args ...string) *flag.FlagSet {
+	cmd := flag.NewFlagSet("trust", flag.ExitOnError)
+
+	cmd.Parse(args)
+	args = flag.Args()
+
+	return cmd
+}
 
 // Trust a certificate on Darwin (MacOS)
 func TrustDarwin(cert string) {
@@ -36,16 +45,14 @@ func TrustLinux(cert string) {
 		command = []string{"update-ca-certificates"}
 		file = "/usr/share/pki/trust/anchors/%s-%d.pem"
 	default:
-		fmt.Println("Supported certificate management not found.")
-		os.Exit(1)
+		exit(1, "Supported certificate management not found.")
 	}
 
 	// Copy certificate
 	file = fmt.Sprintf(file, path.Base(cert), time.Now().Unix())
 	cmd := exec.Command("sudo", "cp", cert, file)
 	if err := cmd.Run(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, err)
 	} else {
 		fmt.Printf("Certificate copied to '%s'", file)
 	}
@@ -53,8 +60,7 @@ func TrustLinux(cert string) {
 	// Trust certificate
 	cmd = exec.Command("sudo", command...)
 	if err := cmd.Run(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, err)
 	}
 }
 
@@ -62,28 +68,27 @@ func TrustLinux(cert string) {
 func TrustWindows(cert string) {
 	command, err := exec.LookPath("certutil")
 	if err != nil {
-		fmt.Println("Could not find 'certutil' command")
-		os.Exit(1)
+		exit(1, "Could not find 'certutil' command")
 	}
 
 	cmd := exec.Command(command, "-addstore", "-f", "ROOT", cert)
 	if err = cmd.Run(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, err)
 	}
 }
 
 // Trust a certificate
-func Trust(cert string) {
+func Trust(args ...string) {
+	parseTrust(args...)
+	cert := getArg()
+
 	// Check if file exists
 	if exists := FileExists(cert); exists == false {
-		fmt.Println("The specified certificate could not be found.")
-		os.Exit(1)
+		exit(1, "The specified certificate could not be found.")
 	}
 
-	fmt.Println("Sudo permissions are required to trust a certificate.")
-
 	// Execute trust strategy based on OS
+	fmt.Println("Sudo permissions are required to trust certificates")
 	switch runtime.GOOS {
 	case "darwin":
 		TrustDarwin(cert)
@@ -92,7 +97,6 @@ func Trust(cert string) {
 	case "windows":
 		TrustWindows(cert)
 	default:
-		fmt.Printf("The operating system '%s' is currently unsupported.\n", runtime.GOOS)
-		os.Exit(1)
+		exit(1, fmt.Sprintf("The operating system '%s' is currently unsupported.\n", runtime.GOOS))
 	}
 }

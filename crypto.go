@@ -8,9 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"flag"
-	"fmt"
 	"math/big"
-	"os"
 	"path"
 	"strings"
 	"time"
@@ -22,7 +20,7 @@ var (
 	trust bool
 
 	// Signers
-	signWith, signKey string
+	rootCert string
 
 	// Certificate subject
 	country, province, locality, streetAddress, postalCode string
@@ -187,9 +185,7 @@ func PrivateKeyPkcs(privateKey crypto.PrivateKey) ([]byte) {
 	key, err := x509.MarshalPKCS8PrivateKey(privateKey)
 
 	if err != nil {
-		fmt.Println("Error occurred while getting ca private key PKCS #8")
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, "Error occurred while getting ca private key PKCS #8. ", err)
 	}
 
 	return key

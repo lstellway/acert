@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
-	"os"
 )
 
 // Parses certificate authority flag set
@@ -26,9 +25,7 @@ func parseCa(args ...string) *flag.FlagSet {
 func generateCa() (crypto.PrivateKey, []byte) {
 	privateKey, err := GenerateKey(bits)
 	if err != nil {
-		fmt.Println("Error occurred while generating private key:")
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, "Error occurred while generating private key: ", err)
 	}
 
 	publicKey := privateKey.(crypto.Signer).Public()
@@ -37,9 +34,7 @@ func generateCa() (crypto.PrivateKey, []byte) {
 	// Create certificate
 	ca, err := x509.CreateCertificate(rand.Reader, &cert, &cert, publicKey, privateKey)
 	if err != nil {
-		fmt.Println("Error occurred while generating certificate authority:")
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, "Error occurred while generating certificate authority: ", err)
 	}
 
 	return privateKey, ca

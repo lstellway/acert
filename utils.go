@@ -25,6 +25,12 @@ type SanObject struct {
 	URIs []*url.URL
 }
 
+// Exit program with message
+func exit(code int, message ...interface{}) {
+	fmt.Println(message...)
+	os.Exit(code)
+}
+
 // Get the next argument
 func getArg() (string) {
 	if len(args) > 0 {
@@ -40,13 +46,9 @@ func FileExists(name string) bool {
 	if _, err := os.Stat(name); err == nil {
 		return true
 	} else if os.IsNotExist(err) {
-		fmt.Printf("File not found: (%s)\n", name)
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, fmt.Sprintf("File not found: (%s)\n", name), err)
 	} else {
-		fmt.Printf("File not found: (%s)\n", name)
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, fmt.Sprintf("File not found: (%s)\n", name), err)
 	}
 
 	return true
@@ -55,12 +57,11 @@ func FileExists(name string) bool {
 // Saves file
 func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
 	if err := os.WriteFile(name, data, permissions); err != nil {
-		fmt.Println("Could not save file: ", name)
-		os.Exit(1)
+		exit(1, "Could not save file: ", name)
 	}
 
 	if report {
-		fmt.Println("Saved file:", name)
+		fmt.Println("Saved file: ", name)
 	}
 }
 
@@ -107,8 +108,7 @@ func ParseUri(uri string) (*url.URL, error) {
 func PemDecode(bytes []byte) []byte {
 	data, _ := pem.Decode(bytes)
 	if data == nil {
-		fmt.Println("Could not parse PEM data")
-		os.Exit(1)
+		exit(1, "Could not parse PEM data")
 	}
 
 	return data.Bytes
@@ -119,8 +119,7 @@ func PemDecodeFile(file string) []byte {
 	// Read file contents
 	data, err := os.ReadFile(file)
 	if err != nil {
-		fmt.Println("Could not read file:", file)
-		os.Exit(1)
+		exit(1, "Could not read file: ", file)
 	}
 
 	return PemDecode(data)

@@ -5,8 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"flag"
-	"fmt"
-	"os"
 )
 
 // Parses certificate signing request flag set
@@ -25,9 +23,7 @@ func generateCsr() (crypto.PrivateKey, []byte) {
 	// Generate private key
 	privateKey, err := GenerateKey(bits)
 	if err != nil {
-		fmt.Println("Error occurred while generating private key:")
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, "Error occurred while generating private key: ", err)
 	}
 
 	template := buildCertificateRequest()
@@ -35,9 +31,7 @@ func generateCsr() (crypto.PrivateKey, []byte) {
 	// Build certificate signing request
     csr, err := x509.CreateCertificateRequest(rand.Reader, &template, privateKey)
 	if err != nil {
-		fmt.Println("Error occurred while generating certificate signing request:")
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, "Error occurred while generating certificate signing request: ", err)
 	}
 
 	return privateKey, csr

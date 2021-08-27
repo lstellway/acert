@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
-	"os"
 )
 
 // Parses certificate authority flag set
@@ -14,14 +13,16 @@ func parseCert(args ...string) *flag.FlagSet {
 	cmd := flag.NewFlagSet("cert", flag.ExitOnError)
 	cmd.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
 	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate\n(default false)")
-	cmd.StringVar(&signWith, "csr", "", "Certificate signing request used to sign the certificate (required)")
-	cmd.StringVar(&signWith, "sign-with", "", "Parent certificate used to sign certificate")
+	cmd.StringVar(&rootCert, "root", "", "Root certificate used to sign certificate")
 	parseCrypto(cmd)
 
 	cmd.Parse(args)
 	args = flag.Args()
 
-	ForceString(&signWith, "Path to parent signing certificate: ")
+	// Ensure root certificate is provided
+	if rootCert == "" {
+		exit(1, "No root certificate specified")
+	}
 
 	return cmd
 }
@@ -29,19 +30,15 @@ func parseCert(args ...string) *flag.FlagSet {
 // Generates a new certificate authority
 func generateCert() (crypto.PrivateKey, []byte) {
 	// Decode signing certificate
-	parent, err := x509.ParseCertificate(PemDecodeFile(signWith))
+	parent, err := x509.ParseCertificate(PemDecodeFile(rootCert))
 	if err != nil {
-		fmt.Println("Invalid certificate", signWith)
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, "Invalid certificate:", rootCert)
 	}
 
 	// Build private key
 	privateKey, err := GenerateKey(bits)
 	if err != nil {
-		fmt.Println("Error occurred while generating private key:")
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, "Error occurred while generating private key: ", err)
 	}
 	publicKey := privateKey.(crypto.Signer).Public()
 
@@ -49,9 +46,7 @@ func generateCert() (crypto.PrivateKey, []byte) {
 	cert := buildCertificate(false)
 	ca, err := x509.CreateCertificate(rand.Reader, &cert, parent, publicKey, privateKey)
 	if err != nil {
-		fmt.Println("Error occurred while generating certificate authority:")
-		fmt.Println(err)
-		os.Exit(1)
+		exit(1, "Error occurred while generating certificate authority:")
 	}
 
 	return privateKey, ca
