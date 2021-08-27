@@ -8,11 +8,11 @@ import (
 )
 
 // Parses certificate signing request flag set
-func parseCsr(args ...string) *flag.FlagSet {
+func parseCsr(input ...string) *flag.FlagSet {
 	cmd := flag.NewFlagSet("ca", flag.ExitOnError)
 	parseCrypto(cmd)
 
-	cmd.Parse(args)
+	cmd.Parse(input)
 	args = flag.Args()
 
 	return cmd

@@ -9,13 +9,13 @@ import (
 )
 
 // Parses certificate authority flag set
-func parseCa(args ...string) *flag.FlagSet {
+func parseCa(input ...string) *flag.FlagSet {
 	cmd := flag.NewFlagSet("ca", flag.ExitOnError)
 	cmd.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
 	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate")
 	parseCrypto(cmd)
 
-	cmd.Parse(args)
+	cmd.Parse(input)
 	args = flag.Args()
 
 	return cmd

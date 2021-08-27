@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os/exec"
 	"path"
@@ -9,13 +8,9 @@ import (
 	"time"
 )
 
-func parseTrust(args ...string) *flag.FlagSet {
-	cmd := flag.NewFlagSet("trust", flag.ExitOnError)
-
-	cmd.Parse(args)
-	args = flag.Args()
-
-	return cmd
+// Parse "trust" command flags
+func parseTrust(input ...string) {
+	args = input
 }
 
 // Trust a certificate on Darwin (MacOS)
@@ -83,7 +78,7 @@ func Trust(args ...string) {
 	cert := getArg()
 
 	// Check if file exists
-	if exists := FileExists(cert); exists == false {
+	if FileExists(cert) == false {
 		exit(1, "The specified certificate could not be found.")
 	}
 
