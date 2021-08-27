@@ -50,7 +50,7 @@ func generateCert() (crypto.PrivateKey, []byte) {
 }
 
 // Initializes the certificate signing request subcommand
-func cert(args ...string) {
+func Cert(args ...string) {
 	cmd := parseCert(args...)
 
 	switch getArg() {

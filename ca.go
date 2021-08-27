@@ -55,7 +55,7 @@ func generateCa() (crypto.PrivateKey, []byte) {
 }
 
 // Initializes the certificate signing request subcommand
-func ca(args ...string) {
+func Ca(args ...string) {
 	cmd := parseCa(args...)
 
 	switch getArg() {

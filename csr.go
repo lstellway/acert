@@ -40,7 +40,7 @@ func generateCsr() (crypto.PrivateKey, []byte) {
 }
 
 // Initializes the certificate signing request subcommand
-func csr(args ...string) {
+func Csr(args ...string) {
 	cmd := parseCsr(args...)
 
 	switch getArg() {

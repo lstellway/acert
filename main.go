@@ -9,11 +9,11 @@ func main() {
 
 	switch getArg() {
 	case "ca":
-		ca(args...)
+		Ca(args...)
 	case "csr":
-		csr(args...)
+		Csr(args...)
 	case "cert":
-		cert(args...)
+		Cert(args...)
 	case "trust":
 		Trust(args...)
 	default:
