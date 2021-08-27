@@ -2,6 +2,8 @@ package main
 
 import (
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -9,7 +11,6 @@ import (
 	"encoding/asn1"
 	"flag"
 	"math/big"
-	"path"
 	"strings"
 	"time"
 )
@@ -18,6 +19,7 @@ var (
 	// General
 	bits, days int
 	trust bool
+	isEcdsa bool
 
 	// Signers
 	rootCert string
@@ -34,6 +36,7 @@ var (
 // Parses arguments related to certificate requests
 func parseCrypto(cmd *flag.FlagSet) {
 	cmd.IntVar(&bits, "bits", 4096, "The size of the key to generate in bits")
+	cmd.BoolVar(&isEcdsa, "ecdsa", false, "Generate keys using ECDSA elliptic curve")
 
 	cmd.StringVar(&country, "country", "", "Country Name (2 letter ISO-3166 code)")
 	cmd.StringVar(&province, "province", "", "State or Province Name (full name)")
@@ -51,14 +54,14 @@ func parseCrypto(cmd *flag.FlagSet) {
 	cmd.StringVar(&sanUri, "sanUri", "", "Comma-delimited Subject Alternative Names (uniform resource identifier)")
 }
 
-// Gets the output file name without an extension attached
-func getOutputPath() string {
-	return path.Join(outputDirectory, commonName)
-}
-
 // Generate a private key
 func GenerateKey(bits int) (crypto.PrivateKey, error) {
-	return rsa.GenerateKey(rand.Reader, bits)
+	switch {
+		case isEcdsa:
+			return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		default:
+			return rsa.GenerateKey(rand.Reader, bits)
+	}
 }
 
 // Generate serial number

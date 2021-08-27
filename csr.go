@@ -48,8 +48,8 @@ func csr(args ...string) {
 		cmd.Usage()
 	default:
 		key, ca := generateCsr()
-		filePath := getOutputPath()
-		SaveFile(filePath + ".CSR.key", PemEncode("RSA PRIVATE KEY", PrivateKeyPkcs(key)), 0600, true)
-		SaveFile(filePath + ".CSR.pem", PemEncode("CERTIFICATE REQUEST", ca), 0600, true)
+
+		SaveFile(getOutputPath(commonName + ".CSR.key"), PemEncode("RSA PRIVATE KEY", PrivateKeyPkcs(key)), 0600, true)
+		SaveFile(getOutputPath(commonName + ".CSR.pem"), PemEncode("CERTIFICATE REQUEST", ca), 0600, true)
 	}
 }

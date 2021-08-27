@@ -64,15 +64,14 @@ func ca(args ...string) {
 	default:
 		// Generate certificate authority
 		key, ca := generateCa()
-		filePath := getOutputPath()
 
 		// Save pem-encoded files to the filesystem
-		SaveFile(filePath + ".CA.key", PemEncode("RSA PRIVATE KEY", PrivateKeyPkcs(key)), 0644, true)
-		SaveFile(filePath + ".CA.pem", PemEncode("CERTIFICATE", ca), 0644, true)
+		SaveFile(getOutputPath(commonName + ".CA.key"), PemEncode("RSA PRIVATE KEY", PrivateKeyPkcs(key)), 0644, true)
+		SaveFile(getOutputPath(commonName + ".CA.pem"), PemEncode("CERTIFICATE", ca), 0644, true)
 
 		if trust {
 			fmt.Println("Adding trusted certificate...")
-			Trust(filePath + ".CA.pem")
+			Trust(getOutputPath(commonName + ".CA.pem"))
 		}
 	}
 }

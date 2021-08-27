@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -29,6 +30,11 @@ type SanObject struct {
 func exit(code int, message ...interface{}) {
 	fmt.Println(message...)
 	os.Exit(code)
+}
+
+// Builds path in output directory
+func getOutputPath(name string) string {
+	return path.Join(outputDirectory, name)
 }
 
 // Get the next argument
