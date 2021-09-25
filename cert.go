@@ -64,12 +64,14 @@ func Cert(flags ...string) {
 		// PEM-encode
 		privateKeyPem := PemEncode("PRIVATE KEY", PrivateKeyPkcs(privateKey))
 		certificatePem := PemEncode("CERTIFICATE", certificate)
-		// Chain authority
-		certificatePem = append(certificatePem, ReadFile(authority)...)
+		chainPem := ReadFile(authority)
+		fullchainPem := append(certificatePem, chainPem...)
 
 		// Save files
-		SaveFile(getOutputPath(commonName+".key"), privateKeyPem, 0644, true)
-		SaveFile(getOutputPath(commonName+".pem"), certificatePem, 0644, true)
+		SaveFile(getOutputPath(commonName+".key.pem"), privateKeyPem, 0644, true)
+		SaveFile(getOutputPath(commonName+".cert.pem"), certificatePem, 0644, true)
+		SaveFile(getOutputPath(commonName+".chain.pem"), chainPem, 0644, true)
+		SaveFile(getOutputPath(commonName+".fullchain.pem"), fullchainPem, 0644, true)
 
 		// Trust
 		if trust {

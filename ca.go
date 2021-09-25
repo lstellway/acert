@@ -82,12 +82,19 @@ func Ca(flags ...string) {
 		certificatePem := PemEncode("CERTIFICATE", certificate)
 
 		// Save files
-		SaveFile(getOutputPath(commonName+".ca.key"), privateKeyPem, 0644, true)
-		SaveFile(getOutputPath(commonName+".ca.pem"), certificatePem, 0644, true)
+		SaveFile(getOutputPath(commonName+".ca.key.pem"), privateKeyPem, 0644, true)
+		SaveFile(getOutputPath(commonName+".ca.cert.pem"), certificatePem, 0644, true)
+
+		if authority != "" {
+			chainPem := ReadFile(authority)
+			fullchainPem := append(certificatePem, chainPem...)
+			SaveFile(getOutputPath(commonName+".ca.chain.pem"), chainPem, 0644, true)
+			SaveFile(getOutputPath(commonName+".ca.fullchain.pem"), fullchainPem, 0644, true)
+		}
 
 		// Trust
 		if trust {
-			Trust(getOutputPath(commonName + ".ca.pem"))
+			Trust(getOutputPath(commonName + ".ca.cert.pem"))
 		}
 	}
 }
