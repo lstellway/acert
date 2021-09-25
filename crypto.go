@@ -19,9 +19,9 @@ import (
 
 var (
 	// General
-	bits, days int
-	trust      bool
-	isEcdsa    bool
+	bits, days, pathLenConstraint int
+	trust                         bool
+	isEcdsa                       bool
 
 	// Signing certificate authority file paths
 	authority, authorityKey string
@@ -52,6 +52,26 @@ func parseCrypto(cmd *flag.FlagSet) {
 	cmd.StringVar(&san, "san", "", "Comma-delimited Subject Alternative Names (DNS, Email, IP, URI)")
 }
 
+// Build subject alternative name data
+func ParseSANHosts(hosts []string) x509.Certificate {
+	template := x509.Certificate{}
+
+	// Parse subject alternative name data
+	for _, value := range hosts {
+		if ip := net.ParseIP(value); ip != nil {
+			template.IPAddresses = append(template.IPAddresses, ip)
+		} else if email, err := mail.ParseAddress(value); err == nil && email.Address == value {
+			template.EmailAddresses = append(template.EmailAddresses, email.Address)
+		} else if uri, err := url.Parse(value); err == nil && uri.Scheme != "" && uri.Host != "" {
+			template.URIs = append(template.URIs, uri)
+		} else {
+			template.DNSNames = append(template.DNSNames, value)
+		}
+	}
+
+	return template
+}
+
 // Generate a private key
 func GenerateKey(bits int) (crypto.PrivateKey, error) {
 	switch {
@@ -74,26 +94,6 @@ func GenerateSerialNumber() *big.Int {
 	}
 
 	return serial
-}
-
-// Build subject alternative name data
-func ParseSANHosts(hosts []string) x509.Certificate {
-	template := x509.Certificate{}
-
-	// Parse subject alternative name data
-	for _, value := range hosts {
-		if ip := net.ParseIP(value); ip != nil {
-			template.IPAddresses = append(template.IPAddresses, ip)
-		} else if email, err := mail.ParseAddress(value); err == nil && email.Address == value {
-			template.EmailAddresses = append(template.EmailAddresses, email.Address)
-		} else if uri, err := url.Parse(value); err == nil && uri.Scheme != "" && uri.Host != "" {
-			template.URIs = append(template.URIs, uri)
-		} else {
-			template.DNSNames = append(template.DNSNames, value)
-		}
-	}
-
-	return template
 }
 
 // Run before building a certificate
@@ -184,6 +184,7 @@ func buildCertificate(ca bool) x509.Certificate {
 	template.SerialNumber = GenerateSerialNumber()
 	template.NotBefore = now
 	template.IsCA = ca
+	template.MaxPathLen = 1
 
 	// Add expiration date based on the configured number of days
 	if days > 0 {
@@ -193,7 +194,7 @@ func buildCertificate(ca bool) x509.Certificate {
 	// Key usage
 	if ca {
 		template.BasicConstraintsValid = true
-		template.KeyUsage = x509.KeyUsageCertSign
+		template.KeyUsage = x509.KeyUsageCertSign | x509.KeyUsageCRLSign
 	} else {
 		template.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
 
@@ -207,6 +208,14 @@ func buildCertificate(ca bool) x509.Certificate {
 		if len(template.EmailAddresses) > 0 {
 			template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageEmailProtection)
 		}
+	}
+
+	// Path length constraint
+	if ca && pathLenConstraint > 0 {
+		template.MaxPathLen = pathLenConstraint
+		template.MaxPathLenZero = false
+	} else {
+		template.MaxPathLenZero = true
 	}
 
 	return template

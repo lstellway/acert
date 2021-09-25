@@ -47,9 +47,9 @@ func FileExists(name string) bool {
 // Require a string value
 func RequireFileValue(value *string, name string) {
 	*value = strings.TrimSpace(*value)
-	fmt.Println("Debug file value: ", *value)
+
 	if *value == "" || !FileExists(*value) {
-		exit(1, fmt.Sprintf("File provided for '%s' found: %s", name, *value))
+		exit(1, fmt.Sprintf("File for '%s' not found: %s", name, *value))
 	}
 }
 

@@ -12,6 +12,7 @@ import (
 func caParse(input ...string) *flag.FlagSet {
 	cmd := flag.NewFlagSet("ca", flag.ExitOnError)
 	cmd.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
+	cmd.IntVar(&pathLenConstraint, "pathLenConstraint", 0, "Maximum number of non-self-issued intermediate certificates that may follow this certificate in a valid certification path")
 	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate")
 	cmd.StringVar(&authority, "authority", "", "Path to PEM-encoded authority certificate used to sign certificate")
 	cmd.StringVar(&authorityKey, "authorityKey", "", "Path to PEM-encoded authority key used to sign certificate")
@@ -24,6 +25,7 @@ func caParse(input ...string) *flag.FlagSet {
 
 	// Ensure required values are set
 	if authority != "" {
+		RequireFileValue(&authority, "authorityKey")
 		RequireFileValue(&authorityKey, "authorityKey")
 	}
 
@@ -50,7 +52,7 @@ func caGenerate() (crypto.PrivateKey, []byte) {
 	// Determine parent certificate and key
 	if authority != "" && authorityKey != "" {
 		parent = ParsePemCertificate(authority)
-		parentKey = ParsePemCertificate(authorityKey)
+		parentKey = ParsePemPrivateKey(authorityKey)
 	} else {
 		parent = &cert
 		parentKey = privateKey
