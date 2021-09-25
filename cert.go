@@ -9,7 +9,7 @@ import (
 )
 
 // Parses certificate authority flag set
-func certParse(input ...string) *flag.FlagSet {
+func certParseFlags(flags ...string) *flag.FlagSet {
 	cmd := flag.NewFlagSet("cert", flag.ExitOnError)
 	cmd.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
 	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate\n(default false)")
@@ -17,9 +17,9 @@ func certParse(input ...string) *flag.FlagSet {
 	cmd.StringVar(&authorityKey, "authorityKey", "", "Path to PEM-encoded authority key used to sign certificate")
 
 	// Add general crypto flags
-	parseCrypto(cmd)
+	cryptoParseFlags(cmd)
 
-	cmd.Parse(input)
+	cmd.Parse(flags)
 	args = cmd.Args()
 
 	// Ensure required values are set
@@ -30,12 +30,12 @@ func certParse(input ...string) *flag.FlagSet {
 }
 
 // Generates a new certificate
-func certGenerate() (crypto.PrivateKey, []byte) {
+func certBuild() (crypto.PrivateKey, []byte) {
 	parent := ParsePemCertificate(authority)
 	parentKey := ParsePemPrivateKey(authorityKey)
 
 	// Build private key
-	privateKey, err := GenerateKey(bits)
+	privateKey, err := GenerateKey(bits, curve)
 	if err != nil {
 		exit(1, "Error occurred while generating private key: ", err)
 	}
@@ -52,15 +52,15 @@ func certGenerate() (crypto.PrivateKey, []byte) {
 }
 
 // Initializes the certificate signing request subcommand
-func Cert(args ...string) {
-	cmd := certParse(args...)
+func Cert(flags ...string) {
+	cmd := certParseFlags(flags...)
 
 	switch getArg() {
 	case "help":
 		cmd.Usage()
 	default:
 		// Generate certificate authority
-		key, ca := certGenerate()
+		key, ca := certBuild()
 
 		// Save pem-encoded files to the filesystem
 		SaveFile(getOutputPath(commonName+".key"), PemEncode("PRIVATE KEY", PrivateKeyPkcs(key)), 0644, true)

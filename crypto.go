@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/mail"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -21,7 +22,10 @@ var (
 	// General
 	bits, days, pathLenConstraint int
 	trust                         bool
-	isEcdsa                       bool
+
+	// Elliptic curve cryptography
+	isEcdsa bool
+	curve   string
 
 	// Signing certificate authority file paths
 	authority, authorityKey string
@@ -33,12 +37,16 @@ var (
 
 	// Subject alternative names
 	san string
+
+	// Verify options
+	host, root, intermediate string
 )
 
 // Parses arguments related to certificate requests
-func parseCrypto(cmd *flag.FlagSet) {
+func cryptoParseFlags(cmd *flag.FlagSet) {
 	cmd.IntVar(&bits, "bits", 2048, "The size of the key to generate in bits")
 	cmd.BoolVar(&isEcdsa, "ecdsa", false, "Generate keys using ECDSA elliptic curve")
+	cmd.StringVar(&curve, "curve", "P256", "Elliptic curve used to generate private key (P224, P256, P384, P521)")
 
 	cmd.StringVar(&country, "country", "", "Country Name (2 letter ISO-3166 code)")
 	cmd.StringVar(&province, "province", "", "State or Province Name (full name)")
@@ -73,10 +81,23 @@ func ParseSANHosts(hosts []string) x509.Certificate {
 }
 
 // Generate a private key
-func GenerateKey(bits int) (crypto.PrivateKey, error) {
+func GenerateKey(bits int, standard string) (crypto.PrivateKey, error) {
 	switch {
 	case isEcdsa:
-		return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		var curve elliptic.Curve
+
+		switch strings.ToLower(standard) {
+		case "p224":
+			curve = elliptic.P224()
+		case "p384":
+			curve = elliptic.P384()
+		case "p521":
+			curve = elliptic.P521()
+		default:
+			curve = elliptic.P256()
+		}
+
+		return ecdsa.GenerateKey(curve, rand.Reader)
 	default:
 		return rsa.GenerateKey(rand.Reader, bits)
 	}
@@ -163,7 +184,7 @@ func buildSubject() pkix.Name {
 func buildCertificateRequest() x509.CertificateRequest {
 	initial := initializeCertificate()
 
-	template := x509.CertificateRequest{
+	request := x509.CertificateRequest{
 		Subject:            buildSubject(),
 		SignatureAlgorithm: x509.SHA256WithRSA,
 		// SAN
@@ -173,58 +194,59 @@ func buildCertificateRequest() x509.CertificateRequest {
 		URIs:           initial.URIs,
 	}
 
-	return template
+	return request
 }
 
 // Build x509 certificate
 func buildCertificate(ca bool) x509.Certificate {
 	// Initialize certificate (includes SAN hosts)
-	template := initializeCertificate()
-	template.Subject = buildSubject()
-	template.SerialNumber = GenerateSerialNumber()
-	template.NotBefore = now
-	template.IsCA = ca
-	template.MaxPathLen = 1
+	certificate := initializeCertificate()
+	certificate.Subject = buildSubject()
+	certificate.SerialNumber = GenerateSerialNumber()
+	certificate.NotBefore = now
+	certificate.IsCA = ca
+	certificate.MaxPathLen = 1
 
 	// Add expiration date based on the configured number of days
 	if days > 0 {
-		template.NotAfter = now.Add(time.Hour * 24 * time.Duration(days))
+		certificate.NotAfter = now.Add(time.Hour * 24 * time.Duration(days))
 	}
 
 	// Key usage
 	if ca {
-		template.BasicConstraintsValid = true
-		template.KeyUsage = x509.KeyUsageCertSign | x509.KeyUsageCRLSign
+		certificate.BasicConstraintsValid = true
+		certificate.KeyUsage = x509.KeyUsageCertSign | x509.KeyUsageCRLSign
 	} else {
-		template.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
+		certificate.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
 
 		// Extended key usage server auth
-		if len(template.IPAddresses) > 0 || len(template.DNSNames) > 0 || len(template.URIs) > 0 {
+		if len(certificate.IPAddresses) > 0 || len(certificate.DNSNames) > 0 || len(certificate.URIs) > 0 {
 			// TODO: are there any issues with always using "x509.ExtKeyUsageClientAuth"?
-			template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth)
+			certificate.ExtKeyUsage = append(certificate.ExtKeyUsage, x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth)
 		}
 
 		// Extended key usage email protection
-		if len(template.EmailAddresses) > 0 {
-			template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageEmailProtection)
+		if len(certificate.EmailAddresses) > 0 {
+			certificate.ExtKeyUsage = append(certificate.ExtKeyUsage, x509.ExtKeyUsageEmailProtection)
 		}
 	}
 
-	// Path length constraint
+	// Path length constraint for building certificate chain
 	if ca && pathLenConstraint > 0 {
-		template.MaxPathLen = pathLenConstraint
-		template.MaxPathLenZero = false
+		certificate.MaxPathLen = pathLenConstraint
+		certificate.MaxPathLenZero = false
 	} else {
-		template.MaxPathLenZero = true
+		certificate.MaxPathLenZero = true
 	}
 
-	return template
+	return certificate
 }
 
 // Parse a pem-encoded certificate file
 func ParsePemCertificate(file string) *x509.Certificate {
 	// Decode signing certificate
-	cert, err := x509.ParseCertificate(PemDecodeFile(file))
+	bytes := PemDecodeFile(file)
+	cert, err := x509.ParseCertificate(bytes)
 
 	if err != nil {
 		exit(1, "Invalid certificate: ", file)
@@ -236,7 +258,8 @@ func ParsePemCertificate(file string) *x509.Certificate {
 // Parse a pem-encoded certificate file
 func ParsePemPrivateKey(file string) crypto.PrivateKey {
 	// Decode signing certificate
-	cert, err := x509.ParsePKCS8PrivateKey(PemDecodeFile(file))
+	bytes := PemDecodeFile(file)
+	cert, err := x509.ParsePKCS8PrivateKey(bytes)
 
 	if err != nil {
 		exit(1, "Invalid private key file: ", file)
