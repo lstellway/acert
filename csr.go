@@ -40,10 +40,10 @@ func csrBuild() (crypto.PrivateKey, []byte) {
 }
 
 // Initializes the certificate signing request subcommand
-func Csr(args ...string) {
+func CertificateSigningRequest(args ...string) {
 	cmd := csrParseFlags(args...)
 
-	switch getArg() {
+	switch getArgument() {
 	case "help":
 		cmd.Usage()
 	default:

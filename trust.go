@@ -23,7 +23,7 @@ func TrustDarwin(cert string) {
 func TrustLinux(cert string) {
 	var (
 		command []string
-		file string
+		file    string
 	)
 
 	switch {
@@ -73,9 +73,9 @@ func TrustWindows(cert string) {
 }
 
 // Trust a certificate
-func Trust(args ...string) {
+func TrustCertificate(args ...string) {
 	parseTrust(args...)
-	cert := getArg()
+	cert := getArgument()
 
 	// Check if file exists
 	if !FileExists(cert) {
@@ -83,7 +83,7 @@ func Trust(args ...string) {
 	}
 
 	// Execute trust strategy based on OS
-	fmt.Println("Sudo permissions are required to trust certificates")
+	log("Sudo permissions are required to trust certificates")
 	switch runtime.GOOS {
 	case "darwin":
 		TrustDarwin(cert)

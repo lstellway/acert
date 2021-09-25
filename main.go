@@ -7,17 +7,17 @@ import (
 func main() {
 	args = os.Args[1:]
 
-	switch getArg() {
+	switch getArgument() {
 	case "ca":
-		Ca(args...)
+		CertificateAuthority(args...)
 	case "csr":
-		Csr(args...)
+		CertificateSigningRequest(args...)
 	case "cert":
-		Cert(args...)
+		Certificate(args...)
 	case "trust":
-		Trust(args...)
+		TrustCertificate(args...)
 	case "verify":
-		Verify(args...)
+		VerifyCertificate(args...)
 	default:
 		// Help
 	}

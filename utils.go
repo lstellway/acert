@@ -17,9 +17,14 @@ var (
 	workingDirectory, _ = os.Getwd()
 )
 
+// Package logger
+func log(messages ...interface{}) {
+	fmt.Println(messages...)
+}
+
 // Exit program with message
-func exit(code int, message ...interface{}) {
-	fmt.Println(message...)
+func exit(code int, messages ...interface{}) {
+	log(messages...)
 	os.Exit(code)
 }
 
@@ -29,7 +34,7 @@ func getOutputPath(name string) string {
 }
 
 // Get the next argument
-func getArg() string {
+func getArgument() string {
 	if len(args) > 0 {
 		arg := args[0]
 		args = args[1:]
@@ -44,12 +49,13 @@ func FileExists(name string) bool {
 	return err == nil
 }
 
-// Require a string value
+// Require a string value from standard input
 func RequireFileValue(value *string, name string) {
 	*value = strings.TrimSpace(*value)
 
 	if *value == "" || !FileExists(*value) {
-		exit(1, fmt.Sprintf("File for '%s' not found: %s", name, *value))
+		message := fmt.Sprintf("File for '%s' not found: %s", name, *value)
+		exit(1, message)
 	}
 }
 
@@ -60,7 +66,7 @@ func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
 	}
 
 	if report {
-		fmt.Println("Saved file: ", name)
+		log("Saved file: ", name)
 	}
 }
 
@@ -91,16 +97,19 @@ func PromptForInput(message string) (string, error) {
 // Force user to provide common name value
 func ForceString(variable *string, message string) string {
 	val := ""
+
 	for strings.TrimSpace(*variable) == "" {
 		val, _ := PromptForInput(message)
 		*variable = strings.TrimSpace(val)
 	}
+
 	return val
 }
 
 // Decode pem-encoded bytes
 func PemDecode(bytes []byte) []byte {
 	data, _ := pem.Decode(bytes)
+
 	if data == nil {
 		exit(1, "Could not parse PEM data")
 	}

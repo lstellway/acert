@@ -19,7 +19,7 @@ func verifyParseFlags(flags ...string) *flag.FlagSet {
 }
 
 // Verify a certificate with configured options
-func verifyCertificate(file string) {
+func verify(file string) {
 	certificate := ParsePemCertificate(file)
 	options := x509.VerifyOptions{}
 
@@ -49,14 +49,14 @@ func verifyCertificate(file string) {
 }
 
 // Verify a certificate
-func Verify(flags ...string) {
+func VerifyCertificate(flags ...string) {
 	cmd := verifyParseFlags(flags...)
-	arg := getArg()
+	arg := getArgument()
 
 	switch arg {
 	case "help":
 		cmd.Usage()
 	default:
-		verifyCertificate(arg)
+		verify(arg)
 	}
 }
