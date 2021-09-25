@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"flag"
-	"fmt"
 )
 
 // Parses certificate authority flag set
@@ -76,15 +75,19 @@ func Ca(flags ...string) {
 		cmd.Usage()
 	default:
 		// Generate certificate authority
-		key, ca := caBuild()
+		privateKey, certificate := caBuild()
 
-		// Save pem-encoded files to the filesystem
-		SaveFile(getOutputPath(commonName+".CA.key"), PemEncode("PRIVATE KEY", PrivateKeyPkcs(key)), 0644, true)
-		SaveFile(getOutputPath(commonName+".CA.pem"), PemEncode("CERTIFICATE", ca), 0644, true)
+		// PEM-encode
+		privateKeyPem := PemEncode("PRIVATE KEY", PrivateKeyPkcs(privateKey))
+		certificatePem := PemEncode("CERTIFICATE", certificate)
 
+		// Save files
+		SaveFile(getOutputPath(commonName+".ca.key"), privateKeyPem, 0644, true)
+		SaveFile(getOutputPath(commonName+".ca.pem"), certificatePem, 0644, true)
+
+		// Trust
 		if trust {
-			fmt.Println("Adding trusted certificate...")
-			Trust(getOutputPath(commonName + ".CA.pem"))
+			Trust(getOutputPath(commonName + ".ca.pem"))
 		}
 	}
 }

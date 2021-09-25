@@ -245,8 +245,9 @@ func buildCertificate(ca bool) x509.Certificate {
 // Parse a pem-encoded certificate file
 func ParsePemCertificate(file string) *x509.Certificate {
 	// Decode signing certificate
-	bytes := PemDecodeFile(file)
-	cert, err := x509.ParseCertificate(bytes)
+	pem := ReadFile(file)
+	data := PemDecode(pem)
+	cert, err := x509.ParseCertificate(data)
 
 	if err != nil {
 		exit(1, "Invalid certificate: ", file)
@@ -258,8 +259,9 @@ func ParsePemCertificate(file string) *x509.Certificate {
 // Parse a pem-encoded certificate file
 func ParsePemPrivateKey(file string) crypto.PrivateKey {
 	// Decode signing certificate
-	bytes := PemDecodeFile(file)
-	cert, err := x509.ParsePKCS8PrivateKey(bytes)
+	pem := ReadFile(file)
+	data := PemDecode(pem)
+	cert, err := x509.ParsePKCS8PrivateKey(data)
 
 	if err != nil {
 		exit(1, "Invalid private key file: ", file)

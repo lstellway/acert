@@ -108,15 +108,14 @@ func PemDecode(bytes []byte) []byte {
 	return data.Bytes
 }
 
-// Pem decode data
-func PemDecodeFile(file string) []byte {
-	// Read file contents
+func ReadFile(file string) []byte {
 	data, err := os.ReadFile(file)
+
 	if err != nil {
 		exit(1, "Could not read file: ", file)
 	}
 
-	return PemDecode(data)
+	return data
 }
 
 // Pem encode data

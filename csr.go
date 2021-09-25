@@ -47,9 +47,9 @@ func Csr(args ...string) {
 	case "help":
 		cmd.Usage()
 	default:
-		key, ca := csrBuild()
+		privateKey, csr := csrBuild()
 
-		SaveFile(getOutputPath(commonName+".CSR.key"), PemEncode("PRIVATE KEY", PrivateKeyPkcs(key)), 0600, true)
-		SaveFile(getOutputPath(commonName+".CSR.pem"), PemEncode("CERTIFICATE REQUEST", ca), 0600, true)
+		SaveFile(getOutputPath(commonName+".csr.key"), PemEncode("PRIVATE KEY", PrivateKeyPkcs(privateKey)), 0644, true)
+		SaveFile(getOutputPath(commonName+".csr.pem"), PemEncode("CERTIFICATE REQUEST", csr), 0644, true)
 	}
 }
