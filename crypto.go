@@ -11,31 +11,33 @@ import (
 	"encoding/asn1"
 	"flag"
 	"math/big"
-	"strings"
+	"net"
+	"net/mail"
+	"net/url"
 	"time"
 )
 
 var (
 	// General
 	bits, days int
-	trust bool
-	isEcdsa bool
+	trust      bool
+	isEcdsa    bool
 
-	// Signers
-	rootCert string
+	// Signing certificate authority file paths
+	authority, authorityKey string
 
 	// Certificate subject
 	country, province, locality, streetAddress, postalCode string
-	organization, organizationalUnit string
-	commonName, email string
+	organization, organizationalUnit                       string
+	commonName, email                                      string
 
 	// Subject alternative names
-	sanDns, sanEmail, sanIp, sanUri string
+	san string
 )
 
 // Parses arguments related to certificate requests
 func parseCrypto(cmd *flag.FlagSet) {
-	cmd.IntVar(&bits, "bits", 4096, "The size of the key to generate in bits")
+	cmd.IntVar(&bits, "bits", 2048, "The size of the key to generate in bits")
 	cmd.BoolVar(&isEcdsa, "ecdsa", false, "Generate keys using ECDSA elliptic curve")
 
 	cmd.StringVar(&country, "country", "", "Country Name (2 letter ISO-3166 code)")
@@ -47,20 +49,16 @@ func parseCrypto(cmd *flag.FlagSet) {
 	cmd.StringVar(&organizationalUnit, "organizationUnit", "", "Organizational Unit Name (eg, section)")
 	cmd.StringVar(&commonName, "commonName", "", "Certificate common name (required)")
 	cmd.StringVar(&email, "email", "", "Email Address")
-
-	cmd.StringVar(&sanDns, "sanDns", "", "Comma-delimited Subject Alternative Names (domain names)")
-	cmd.StringVar(&sanEmail, "sanEmail", "", "Comma-delimited Subject Alternative Names (email addresses)")
-	cmd.StringVar(&sanIp, "sanIp", "", "Comma-delimited Subject Alternative Names (ip addresses)")
-	cmd.StringVar(&sanUri, "sanUri", "", "Comma-delimited Subject Alternative Names (uniform resource identifier)")
+	cmd.StringVar(&san, "san", "", "Comma-delimited Subject Alternative Names (DNS, Email, IP, URI)")
 }
 
 // Generate a private key
 func GenerateKey(bits int) (crypto.PrivateKey, error) {
 	switch {
-		case isEcdsa:
-			return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		default:
-			return rsa.GenerateKey(rand.Reader, bits)
+	case isEcdsa:
+		return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	default:
+		return rsa.GenerateKey(rand.Reader, bits)
 	}
 }
 
@@ -78,31 +76,72 @@ func GenerateSerialNumber() *big.Int {
 	return serial
 }
 
-// Run before building a certificate
-func preCertificate() {
-	// Make sure subject alternative names are set
-	ForceString(&sanDns, "Subject Alternative Name(s) (e.g. subdomains) []: ")
+// Build subject alternative name data
+func ParseSANHosts(hosts []string) x509.Certificate {
+	template := x509.Certificate{}
 
-	// Add common name if not set
-	if strings.TrimSpace(commonName) == "" {
-		commonName = SplitValue(sanDns, ",")[0]
+	// Parse subject alternative name data
+	for _, value := range hosts {
+		if ip := net.ParseIP(value); ip != nil {
+			template.IPAddresses = append(template.IPAddresses, ip)
+		} else if email, err := mail.ParseAddress(value); err == nil && email.Address == value {
+			template.EmailAddresses = append(template.EmailAddresses, email.Address)
+		} else if uri, err := url.Parse(value); err == nil && uri.Scheme != "" && uri.Host != "" {
+			template.URIs = append(template.URIs, uri)
+		} else {
+			template.DNSNames = append(template.DNSNames, value)
+		}
 	}
+
+	return template
+}
+
+// Run before building a certificate
+func initializeCertificate() x509.Certificate {
+	// Make sure subject alternative names are set
+	ForceString(&san, "Subject Alternative Name(s) (e.g. subdomains) []: ")
+
+	// Get SAN hosts
+	hosts := SplitValue(san, ",")
+
+	// Default commonName to first SAN host
+	if commonName == "" && len(hosts) > 0 {
+		commonName = hosts[0]
+	}
+
+	return ParseSANHosts(hosts)
 }
 
 // Build certificate subject
-func buildSubject() (pkix.Name) {
+func buildSubject() pkix.Name {
 	name := pkix.Name{
 		ExtraNames: []pkix.AttributeTypeAndValue{},
 	}
 
-	if country != "" { name.Country = []string{country} }
-	if province != "" { name.Province = []string{province} }
-	if locality != "" { name.Locality = []string{locality} }
-	if streetAddress != "" { name.StreetAddress = []string{streetAddress} }
-	if postalCode != "" { name.PostalCode = []string{postalCode} }
-	if organization != "" { name.Organization = []string{organization} }
-	if organizationalUnit != "" { name.OrganizationalUnit = []string{organizationalUnit} }
-	if commonName != "" { name.CommonName = commonName }
+	if country != "" {
+		name.Country = []string{country}
+	}
+	if province != "" {
+		name.Province = []string{province}
+	}
+	if locality != "" {
+		name.Locality = []string{locality}
+	}
+	if streetAddress != "" {
+		name.StreetAddress = []string{streetAddress}
+	}
+	if postalCode != "" {
+		name.PostalCode = []string{postalCode}
+	}
+	if organization != "" {
+		name.Organization = []string{organization}
+	}
+	if organizationalUnit != "" {
+		name.OrganizationalUnit = []string{organizationalUnit}
+	}
+	if commonName != "" {
+		name.CommonName = commonName
+	}
 
 	// Add email
 	// Thank you: https://stackoverflow.com/a/50394867/4612530
@@ -111,7 +150,7 @@ func buildSubject() (pkix.Name) {
 		name.ExtraNames = append(name.ExtraNames, pkix.AttributeTypeAndValue{
 			Type: asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 9, 1},
 			Value: asn1.RawValue{
-				Tag:   asn1.TagIA5String, 
+				Tag:   asn1.TagIA5String,
 				Bytes: []byte(email),
 			},
 		})
@@ -120,79 +159,55 @@ func buildSubject() (pkix.Name) {
 	return name
 }
 
-// buildSanData builds a struct full of subject alternative name info
-func buildSanData() SanObject {
-	template := SanObject{}
-
-	// SAN - Email addresses
-	if strings.TrimSpace(sanEmail) != "" { template.EmailAddresses = SplitValue(sanEmail, ",") }
-
-	// SAN - IP Addresses
-	if strings.TrimSpace(sanIp) != "" {
-		for _, val := range SplitValue(sanIp, ",") {
-			if ip := ParseIPAddress(val); ip != nil {
-				template.IPAddresses = append(template.IPAddresses, ip)
-			}
-		}
-	}
-
-	// SAN - Universal resource identifiers
-	if strings.TrimSpace(sanUri) != "" {
-		for _, val := range SplitValue(sanUri, ",") {
-			if uri, err := ParseUri(val); err != nil {
-				template.URIs = append(template.URIs, uri)
-			}
-		}
-	}
-
-	return template
-}
-
 // Builds certificate signing request template
 func buildCertificateRequest() x509.CertificateRequest {
-	preCertificate()
+	initial := initializeCertificate()
 
 	template := x509.CertificateRequest{
-        Subject: buildSubject(),
-        SignatureAlgorithm: x509.SHA256WithRSA,
-		DNSNames: SplitValue(sanDns, ","),
-    }
-
-	// Attach subject alternative name values
-	san := buildSanData()
-	if len(san.EmailAddresses) > 0 { template.EmailAddresses = san.EmailAddresses }
-	if len(san.IPAddresses) > 0 { template.IPAddresses = san.IPAddresses }
-	if len(san.URIs) > 0 { template.URIs = san.URIs }
+		Subject:            buildSubject(),
+		SignatureAlgorithm: x509.SHA256WithRSA,
+		// SAN
+		DNSNames:       initial.DNSNames,
+		IPAddresses:    initial.IPAddresses,
+		EmailAddresses: initial.EmailAddresses,
+		URIs:           initial.URIs,
+	}
 
 	return template
 }
 
 // Build x509 certificate
 func buildCertificate(ca bool) x509.Certificate {
-	preCertificate()
+	// Initialize certificate (includes SAN hosts)
+	template := initializeCertificate()
+	template.Subject = buildSubject()
+	template.SerialNumber = GenerateSerialNumber()
+	template.NotBefore = now
+	template.IsCA = ca
 
-	template := x509.Certificate{
-		Subject: buildSubject(),
-		SerialNumber: GenerateSerialNumber(),
-		NotBefore: now,
-		IsCA: ca,
-		KeyUsage: x509.KeyUsageDigitalSignature,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-		DNSNames: SplitValue(sanDns, ","),
+	// Add expiration date based on the configured number of days
+	if days > 0 {
+		template.NotAfter = now.Add(time.Hour * 24 * time.Duration(days))
 	}
 
-	// Expiration
-	if days > 0 { template.NotAfter = now.Add(time.Hour * 24 * time.Duration(days)) }
-
 	// Key usage
-	if ca { template.KeyUsage = template.KeyUsage | x509.KeyUsageCertSign }
+	if ca {
+		template.BasicConstraintsValid = true
+		template.KeyUsage = x509.KeyUsageCertSign
+	} else {
+		template.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
 
-	// Attach subject alternative name values
-	san := buildSanData()
-	if len(san.EmailAddresses) > 0 { template.EmailAddresses = san.EmailAddresses }
-	if len(san.IPAddresses) > 0 { template.IPAddresses = san.IPAddresses }
-	if len(san.URIs) > 0 { template.URIs = san.URIs }
+		// Extended key usage server auth
+		if len(template.IPAddresses) > 0 || len(template.DNSNames) > 0 || len(template.URIs) > 0 {
+			// TODO: are there any issues with always using "x509.ExtKeyUsageClientAuth"?
+			template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth)
+		}
+
+		// Extended key usage email protection
+		if len(template.EmailAddresses) > 0 {
+			template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageEmailProtection)
+		}
+	}
 
 	return template
 }
@@ -209,8 +224,20 @@ func ParsePemCertificate(file string) *x509.Certificate {
 	return cert
 }
 
+// Parse a pem-encoded certificate file
+func ParsePemPrivateKey(file string) crypto.PrivateKey {
+	// Decode signing certificate
+	cert, err := x509.ParsePKCS8PrivateKey(PemDecodeFile(file))
+
+	if err != nil {
+		exit(1, "Invalid private key file: ", file)
+	}
+
+	return cert
+}
+
 // Get private key PKCS #8
-func PrivateKeyPkcs(privateKey crypto.PrivateKey) ([]byte) {
+func PrivateKeyPkcs(privateKey crypto.PrivateKey) []byte {
 	key, err := x509.MarshalPKCS8PrivateKey(privateKey)
 
 	if err != nil {

@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"encoding/pem"
 	"fmt"
-	"net"
-	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -13,18 +11,11 @@ import (
 )
 
 var (
-	args []string
-	now = time.Now()
-	outputDirectory string
+	args                []string
+	now                 = time.Now()
+	outputDirectory     string
 	workingDirectory, _ = os.Getwd()
 )
-
-// Subject alternative names object
-type SanObject struct {
-	EmailAddresses []string
-	IPAddresses []net.IP
-	URIs []*url.URL
-}
 
 // Exit program with message
 func exit(code int, message ...interface{}) {
@@ -38,7 +29,7 @@ func getOutputPath(name string) string {
 }
 
 // Get the next argument
-func getArg() (string) {
+func getArg() string {
 	if len(args) > 0 {
 		arg := args[0]
 		args = args[1:]
@@ -51,6 +42,15 @@ func getArg() (string) {
 func FileExists(name string) bool {
 	_, err := os.Stat(name)
 	return err == nil
+}
+
+// Require a string value
+func RequireFileValue(value *string, name string) {
+	*value = strings.TrimSpace(*value)
+	fmt.Println("Debug file value: ", *value)
+	if *value == "" || !FileExists(*value) {
+		exit(1, fmt.Sprintf("File provided for '%s' found: %s", name, *value))
+	}
 }
 
 // Saves file
@@ -66,21 +66,26 @@ func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
 
 // Split value by delimiter
 func SplitValue(value string, delimiter string) []string {
-    var values []string
+	var values []string
+
+	// Trim whitespace
+	value = strings.TrimSpace(value)
 
 	for _, val := range strings.Split(value, delimiter) {
 		val = strings.TrimSpace(val)
-        if val != "" { values = append(values, val) }
-    }
+		if val != "" {
+			values = append(values, val)
+		}
+	}
 
 	return values
 }
 
 // Prompt for user input
 func PromptForInput(message string) (string, error) {
-    reader := bufio.NewReader(os.Stdin)
-    fmt.Print(message)
-    return reader.ReadString('\n')
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(message)
+	return reader.ReadString('\n')
 }
 
 // Force user to provide common name value
@@ -91,16 +96,6 @@ func ForceString(variable *string, message string) string {
 		*variable = strings.TrimSpace(val)
 	}
 	return val
-}
-
-// Parse IP address
-func ParseIPAddress(ip string) net.IP {
-	return net.ParseIP(ip)
-}
-
-// Parse URL
-func ParseUri(uri string) (*url.URL, error) {
-	return url.Parse(uri)
 }
 
 // Decode pem-encoded bytes

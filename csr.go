@@ -8,7 +8,7 @@ import (
 )
 
 // Parses certificate signing request flag set
-func parseCsr(input ...string) *flag.FlagSet {
+func csrParse(input ...string) *flag.FlagSet {
 	cmd := flag.NewFlagSet("ca", flag.ExitOnError)
 
 	// Add general crypto flags
@@ -21,7 +21,7 @@ func parseCsr(input ...string) *flag.FlagSet {
 }
 
 // Generate certificate signing request
-func generateCsr() (crypto.PrivateKey, []byte) {
+func csrGenerate() (crypto.PrivateKey, []byte) {
 	// Generate private key
 	privateKey, err := GenerateKey(bits)
 	if err != nil {
@@ -31,7 +31,7 @@ func generateCsr() (crypto.PrivateKey, []byte) {
 	template := buildCertificateRequest()
 
 	// Build certificate signing request
-    csr, err := x509.CreateCertificateRequest(rand.Reader, &template, privateKey)
+	csr, err := x509.CreateCertificateRequest(rand.Reader, &template, privateKey)
 	if err != nil {
 		exit(1, "Error occurred while generating certificate signing request: ", err)
 	}
@@ -41,15 +41,15 @@ func generateCsr() (crypto.PrivateKey, []byte) {
 
 // Initializes the certificate signing request subcommand
 func Csr(args ...string) {
-	cmd := parseCsr(args...)
+	cmd := csrParse(args...)
 
 	switch getArg() {
 	case "help":
 		cmd.Usage()
 	default:
-		key, ca := generateCsr()
+		key, ca := csrGenerate()
 
-		SaveFile(getOutputPath(commonName + ".CSR.key"), PemEncode("RSA PRIVATE KEY", PrivateKeyPkcs(key)), 0600, true)
-		SaveFile(getOutputPath(commonName + ".CSR.pem"), PemEncode("CERTIFICATE REQUEST", ca), 0600, true)
+		SaveFile(getOutputPath(commonName+".CSR.key"), PemEncode("PRIVATE KEY", PrivateKeyPkcs(key)), 0600, true)
+		SaveFile(getOutputPath(commonName+".CSR.pem"), PemEncode("CERTIFICATE REQUEST", ca), 0600, true)
 	}
 }
