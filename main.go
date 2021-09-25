@@ -16,6 +16,8 @@ func main() {
 		Cert(args...)
 	case "trust":
 		Trust(args...)
+	case "verify":
+		Verify(args...)
 	default:
 		// Help
 	}
