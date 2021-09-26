@@ -8,12 +8,12 @@ func main() {
 	args = os.Args[1:]
 
 	switch getArgument() {
-	case "ca":
+	case "ca", "authority":
 		CertificateAuthority(args...)
-	case "csr":
-		CertificateRequest(args...)
-	case "cert":
+	case "cert", "certificate":
 		Certificate(args...)
+	case "csr", "request":
+		CertificateRequest(args...)
 	case "trust":
 		TrustCertificate(args...)
 	case "verify":

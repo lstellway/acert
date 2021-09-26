@@ -10,8 +10,8 @@ var (
 	trust                         bool
 
 	// Elliptic curve cryptography
-	isEcdsa bool
-	curve   string
+	isEcdsa, isEd25519 bool
+	curve              string
 
 	// File paths
 	parent, key, csr string
@@ -43,12 +43,13 @@ func certificateSubjectFlags(cmd *flag.FlagSet) {
 // Parses generic cryptography flags
 func certificateKeyFlags(cmd *flag.FlagSet) {
 	cmd.IntVar(&bits, "bits", 2048, "The size of the key to generate in bits")
-	cmd.BoolVar(&isEcdsa, "ecdsa", false, "Generate keys using ECDSA elliptic curve")
+	cmd.BoolVar(&isEd25519, "ed25519", false, "Generate keys using ED25519 signature algorithm")
+	cmd.BoolVar(&isEcdsa, "ecdsa", false, "Generate keys using ECDSA elliptic curve signature algorithm")
 	cmd.StringVar(&curve, "curve", "P256", "Elliptic curve used to generate private key (P224, P256, P384, P521)")
 }
 
 // Flags to sign a certificate using parent certificate
-func certificateGenerateFlags(cmd *flag.FlagSet) {
+func certificateBuildFlags(cmd *flag.FlagSet) {
 	cmd.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
 	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate\n(default false)")
 	cmd.StringVar(&parent, "parent", "", "Path to PEM-encoded certificate used to sign certificate (authority or intermediate certificate)")
@@ -61,7 +62,7 @@ func Certificate(flags ...string) {
 	cmd := parseFlags("cert", func(cmd *flag.FlagSet) {
 		certificateSubjectFlags(cmd)
 		certificateKeyFlags(cmd)
-		certificateGenerateFlags(cmd)
+		certificateBuildFlags(cmd)
 	}, flags...)
 
 	switch flags[0] {

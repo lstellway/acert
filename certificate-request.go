@@ -16,15 +16,13 @@ func CertificateRequest(flags ...string) {
 	case "help":
 		cmd.Usage()
 	case "sign":
-		// First argument should be path to signing request file
-		csr := getArgument()
-		RequireFileValue(&csr, "csr")
-
 		// Parse command flags
 		parseFlags("sign", func(cmd *flag.FlagSet) {
-			certificateGenerateFlags(cmd)
-			cmd.StringVar(&csr, "csr", "", "Path to PEM-encoded certificate signing request used to build certificate")
+			certificateBuildFlags(cmd)
 		}, flags[1:]...)
+
+		// First argument should be path to signing request file
+		csr = getArgument()
 
 		buildCertificate(false, true)
 	default:

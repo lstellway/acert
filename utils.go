@@ -86,10 +86,10 @@ func RequireFileValue(value *string, name string) {
 func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
 	// Write to filesystem
 	err := os.WriteFile(name, data, permissions)
-	exitOnError(err, "Could not save file: ", name)
+	exitOnError(err, "Could not save file:", name)
 
 	if report {
-		log("Saved file: ", name)
+		log("Saved file:", name)
 	}
 }
 
@@ -129,7 +129,7 @@ func ForceStringInput(variable *string, message string) string {
 // Read file contents
 func ReadFile(file string) []byte {
 	data, err := os.ReadFile(file)
-	exitOnError(err, "Could not read file: ", file)
+	exitOnError(err, "Could not read file:", file)
 	return data
 }
 
@@ -159,7 +159,8 @@ func PemDecode(bytes []byte, types ...string) []byte {
 		}
 
 		if !isValid {
-			exit(1, "PEM file using ")
+			message := fmt.Sprintf("Unexpected PEM format '%s'. Expecting %s", data.Type, strings.Join(types, " or "))
+			exit(1, message)
 		}
 	}
 

@@ -3,13 +3,13 @@ package main
 import (
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
-	"fmt"
 	"math/big"
 	"net"
 	"net/mail"
@@ -77,10 +77,13 @@ func GenerateKey(bits int, standard string) crypto.PrivateKey {
 	)
 
 	switch {
+	case isEd25519:
+		_, privateKey, err = ed25519.GenerateKey(rand.Reader)
 	case isEcdsa:
 		var curve elliptic.Curve
+		standard = strings.TrimSpace(strings.ToLower(standard))
 
-		switch strings.ToLower(standard) {
+		switch standard {
 		case "p224":
 			curve = elliptic.P224()
 		case "p384":
@@ -262,6 +265,10 @@ func buildCertificate(isCa bool, isFromCsr bool) {
 
 	// Add expiration date based on the configured number of days
 	if days > 0 {
+		if days > 825 {
+			log("Warning: iOS and macOS certificates must have a validity period of 825 days or fewer")
+			log("Reference: https://support.apple.com/en-us/HT210176")
+		}
 		certificate.NotAfter = now.Add(time.Hour * 24 * time.Duration(days))
 	}
 
@@ -324,7 +331,6 @@ func buildCertificate(isCa bool, isFromCsr bool) {
 	}
 
 	// Save PEM-encoded private key file
-	log(fmt.Sprintf("privateKey type (%T)", privateKey))
 	if privateKey != nil {
 		privateKeyPem := PemEncode("PRIVATE KEY", PrivateKeyPkcs(privateKey))
 		SaveFile(getOutputPath(name+".key.pem"), privateKeyPem, 0644, true)

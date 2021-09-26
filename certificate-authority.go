@@ -10,7 +10,7 @@ func CertificateAuthority(flags ...string) {
 	cmd := parseFlags("ca", func(cmd *flag.FlagSet) {
 		certificateSubjectFlags(cmd)
 		certificateKeyFlags(cmd)
-		certificateGenerateFlags(cmd)
+		certificateBuildFlags(cmd)
 		cmd.IntVar(&pathLenConstraint, "pathLength", 0, "Maximum number of non-self-issued intermediate certificates that may follow this certificate in a valid certification path (for certificate chaining)")
 	}, flags...)
 
