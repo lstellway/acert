@@ -11,7 +11,7 @@ func main() {
 	case "ca":
 		CertificateAuthority(args...)
 	case "csr":
-		CertificateSigningRequest(args...)
+		CertificateRequest(args...)
 	case "cert":
 		Certificate(args...)
 	case "trust":

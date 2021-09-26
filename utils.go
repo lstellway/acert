@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/pem"
+	"flag"
 	"fmt"
 	"os"
 	"path"
@@ -31,6 +32,19 @@ func exit(code int, messages ...interface{}) {
 // Builds path in output directory
 func getOutputPath(name string) string {
 	return path.Join(outputDirectory, name)
+}
+
+// Build flag set
+func parseFlags(name string, apply func(cmd *flag.FlagSet), flags ...string) *flag.FlagSet {
+	flagSet := flag.NewFlagSet(name, flag.ExitOnError)
+
+	// Apply function to flag set
+	apply(flagSet)
+
+	flagSet.Parse(flags)
+	args = flagSet.Args()
+
+	return flagSet
 }
 
 // Get the next argument

@@ -5,19 +5,6 @@ import (
 	"flag"
 )
 
-// Parse flags for Verify subcommand
-func verifyParseFlags(flags ...string) *flag.FlagSet {
-	cmd := flag.NewFlagSet("cert", flag.ExitOnError)
-	cmd.StringVar(&host, "host", "", "Host name to verify")
-	cmd.StringVar(&root, "root", "", "Trusted root certificate")
-	cmd.StringVar(&intermediate, "intermediate", "", "Intermediate certificate")
-
-	cmd.Parse(flags)
-	args = cmd.Args()
-
-	return cmd
-}
-
 // Verify a certificate with configured options
 func verify(file string) {
 	certificate := ParsePemCertificate(file)
@@ -50,9 +37,14 @@ func verify(file string) {
 
 // Verify a certificate
 func VerifyCertificate(flags ...string) {
-	cmd := verifyParseFlags(flags...)
-	arg := getArgument()
+	// Parse command flags
+	cmd := parseFlags("verify", func(cmd *flag.FlagSet) {
+		cmd.StringVar(&host, "host", "", "Host name to verify")
+		cmd.StringVar(&root, "root", "", "Trusted root certificate")
+		cmd.StringVar(&intermediate, "intermediate", "", "Intermediate certificate")
+	}, flags...)
 
+	arg := getArgument()
 	switch arg {
 	case "help":
 		cmd.Usage()
