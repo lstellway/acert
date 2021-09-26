@@ -11,7 +11,7 @@ func CertificateAuthority(flags ...string) {
 		certificateSubjectFlags(cmd)
 		certificateKeyFlags(cmd)
 		certificateGenerateFlags(cmd)
-		cmd.IntVar(&pathLenConstraint, "pathLenConstraint", 0, "Maximum number of non-self-issued intermediate certificates that may follow this certificate in a valid certification path")
+		cmd.IntVar(&pathLenConstraint, "pathLength", 0, "Maximum number of non-self-issued intermediate certificates that may follow this certificate in a valid certification path (for certificate chaining)")
 	}, flags...)
 
 	switch flags[0] {

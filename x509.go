@@ -9,7 +9,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
-	"flag"
+	"fmt"
 	"math/big"
 	"net"
 	"net/mail"
@@ -18,60 +18,39 @@ import (
 	"time"
 )
 
-var (
-	// General
-	bits, days, pathLenConstraint int
-	trust                         bool
-
-	// Elliptic curve cryptography
-	isEcdsa bool
-	curve   string
-
-	// File paths
-	authority, authorityKey, csr string
-
-	// Certificate subject
-	country, province, locality, streetAddress, postalCode string
-	organization, organizationalUnit                       string
-	commonName, email                                      string
-	san                                                    string
-
-	// Verify options
-	host, root, intermediate string
-)
-
-// Flags used to build the certificate subject
-func certificateSubjectFlags(cmd *flag.FlagSet) {
-	cmd.StringVar(&country, "country", "", "Country Name (2 letter ISO-3166 code)")
-	cmd.StringVar(&province, "province", "", "State or Province Name (full name)")
-	cmd.StringVar(&locality, "locality", "", "Locality Name (eg, city)")
-	cmd.StringVar(&streetAddress, "streetAddress", "", "Street Address\n(eg: 123 Fake Street)")
-	cmd.StringVar(&postalCode, "postalCode", "", "Postal Code (eg, 94016)")
-	cmd.StringVar(&organization, "organization", "", "Organization Name (eg, company)")
-	cmd.StringVar(&organizationalUnit, "organizationUnit", "", "Organizational Unit Name (eg, section)")
-	cmd.StringVar(&commonName, "commonName", "", "Certificate common name (required)")
-	cmd.StringVar(&email, "email", "", "Email Address")
-	cmd.StringVar(&san, "san", "", "Comma-delimited Subject Alternative Names (DNS, Email, IP, URI)")
+// Parse a pem-encoded certificate file
+func ParsePemCertificate(file string) *x509.Certificate {
+	data := ParsePemFile(file, "CERTIFICATE")
+	cert, err := x509.ParseCertificate(data)
+	exitOnError(err, "Invalid certificate: ", file)
+	return cert
 }
 
-// Parses generic cryptography flags
-func certificateKeyFlags(cmd *flag.FlagSet) {
-	cmd.IntVar(&bits, "bits", 2048, "The size of the key to generate in bits")
-	cmd.BoolVar(&isEcdsa, "ecdsa", false, "Generate keys using ECDSA elliptic curve")
-	cmd.StringVar(&curve, "curve", "P256", "Elliptic curve used to generate private key (P224, P256, P384, P521)")
-
+// Parse a pem-encoded certificate file
+func ParsePemCertificateRequest(file string) *x509.CertificateRequest {
+	data := ParsePemFile(file, "CERTIFICATE REQUEST", "NEW CERTIFICATE REQUEST")
+	cert, err := x509.ParseCertificateRequest(data)
+	exitOnError(err, "Invalid certificate request file: ", file)
+	return cert
 }
 
-// Flags to sign a certificate using parent certificate
-func certificateGenerateFlags(cmd *flag.FlagSet) {
-	cmd.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
-	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate\n(default false)")
-	cmd.StringVar(&authority, "authority", "", "Path to PEM-encoded authority certificate used to sign certificate")
-	cmd.StringVar(&authorityKey, "authorityKey", "", "Path to PEM-encoded authority key used to sign certificate")
+// Parse a pem-encoded certificate file
+func ParsePemPrivateKey(file string) crypto.PrivateKey {
+	data := ParsePemFile(file, "PRIVATE KEY")
+	cert, err := x509.ParsePKCS8PrivateKey(data)
+	exitOnError(err, "Invalid private key file: ", file)
+	return cert
+}
+
+// Get private key PKCS #8
+func PrivateKeyPkcs(privateKey crypto.PrivateKey) []byte {
+	key, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	exitOnError(err, "Error occurred while getting ca private key PKCS #8. ", err)
+	return key
 }
 
 // Build subject alternative name data
-func ParseSANHosts(hosts []string) x509.Certificate {
+func ParseSanHosts(hosts []string) x509.Certificate {
 	template := x509.Certificate{}
 
 	// Parse subject alternative name data
@@ -96,6 +75,7 @@ func GenerateKey(bits int, standard string) crypto.PrivateKey {
 		privateKey crypto.PrivateKey
 		err        error
 	)
+
 	switch {
 	case isEcdsa:
 		var curve elliptic.Curve
@@ -116,10 +96,7 @@ func GenerateKey(bits int, standard string) crypto.PrivateKey {
 		privateKey, err = rsa.GenerateKey(rand.Reader, bits)
 	}
 
-	if err != nil {
-		exit(1, "Error occurred while generating private key: ", err)
-	}
-
+	exitOnError(err, "Error occurred while generating private key: ", err)
 	return privateKey
 }
 
@@ -130,17 +107,35 @@ func GenerateSerialNumber() *big.Int {
 
 	// Generate serial
 	serial, err := rand.Int(rand.Reader, limit)
-	if err != nil {
-		exit(1, "Could not generate serial number.", err)
-	}
-
+	exitOnError(err, "Could not generate serial number.", err)
 	return serial
 }
 
+// Build certificate from signing request
+func DecorateCertificateFromRequest(certificate *x509.Certificate, request x509.CertificateRequest) {
+	certificate.Subject = request.Subject
+	certificate.Extensions = request.Extensions
+	certificate.ExtraExtensions = request.ExtraExtensions
+
+	// SAN
+	for _, value := range request.DNSNames {
+		certificate.DNSNames = append(certificate.DNSNames, value)
+	}
+	for _, value := range request.IPAddresses {
+		certificate.IPAddresses = append(certificate.IPAddresses, value)
+	}
+	for _, value := range request.EmailAddresses {
+		certificate.EmailAddresses = append(certificate.EmailAddresses, value)
+	}
+	for _, value := range request.URIs {
+		certificate.URIs = append(certificate.URIs, value)
+	}
+}
+
 // Run before building a certificate
-func buildCertificateWithSan() x509.Certificate {
+func buildCertificateSan() x509.Certificate {
 	// Make sure subject alternative names are set
-	ForceString(&san, "Subject Alternative Name(s) (e.g. subdomains) []: ")
+	ForceStringInput(&san, "Subject Alternative Name(s) (e.g. subdomains) []: ")
 
 	// Get SAN hosts
 	hosts := SplitValue(san, ",")
@@ -150,7 +145,7 @@ func buildCertificateWithSan() x509.Certificate {
 		commonName = hosts[0]
 	}
 
-	return ParseSANHosts(hosts)
+	return ParseSanHosts(hosts)
 }
 
 // Build certificate subject
@@ -200,60 +195,60 @@ func buildSubject() pkix.Name {
 	return name
 }
 
-// Build certificate from signing request
-func DecorateCertificateFromRequest(certificate *x509.Certificate, request x509.CertificateRequest) {
-	certificate.Subject = request.Subject
-	certificate.Extensions = request.Extensions
-	certificate.ExtraExtensions = request.ExtraExtensions
+// Generate certificate signing request
+func buildCertificateRequest() (crypto.PrivateKey, []byte) {
+	// Generate private key
+	privateKey := GenerateKey(bits, curve)
 
-	// SAN
-	for _, value := range request.DNSNames {
-		certificate.DNSNames = append(certificate.DNSNames, value)
+	// Build request template
+	certificate := buildCertificateSan()
+	request := x509.CertificateRequest{
+		Subject:        buildSubject(),
+		DNSNames:       certificate.DNSNames,
+		IPAddresses:    certificate.IPAddresses,
+		EmailAddresses: certificate.EmailAddresses,
+		URIs:           certificate.URIs,
 	}
-	for _, value := range request.IPAddresses {
-		certificate.IPAddresses = append(certificate.IPAddresses, value)
-	}
-	for _, value := range request.EmailAddresses {
-		certificate.EmailAddresses = append(certificate.EmailAddresses, value)
-	}
-	for _, value := range request.URIs {
-		certificate.URIs = append(certificate.URIs, value)
-	}
+
+	// Build certificate signing request
+	csr, err := x509.CreateCertificateRequest(rand.Reader, &request, privateKey)
+	exitOnError(err, "Error occurred while generating certificate signing request: ", err)
+	return privateKey, csr
 }
 
 // Trust the saved certificate
 func buildCertificate(isCa bool, isFromCsr bool) {
 	var (
-		publicKey             crypto.PublicKey
-		privateKey, parentKey crypto.PrivateKey
-		parent                *x509.Certificate
-		certificate           x509.Certificate
-		subject               pkix.Name
+		publicKey                crypto.PublicKey
+		privateKey, authorityKey crypto.PrivateKey
+		authority                *x509.Certificate
+		certificate              x509.Certificate
+		commonName               string
 	)
 
 	// Validations
 	if !isCa {
-		RequireFileValue(&authority, "authority")
-		RequireFileValue(&authorityKey, "authorityKey")
+		RequireFileValue(&parent, "parent")
+		RequireFileValue(&key, "key")
 	}
 	if isFromCsr {
 		RequireFileValue(&csr, "csr")
 	}
 
 	if isFromCsr {
-		// Build certificate from signing request
+		// Initialize certificate from signing request
 		request := ParsePemCertificateRequest(csr)
 		certificate = x509.Certificate{}
 		DecorateCertificateFromRequest(&certificate, *request)
-		subject = certificate.Subject
+		commonName = certificate.Subject.CommonName
 
 		// Use request public key
 		publicKey = request.PublicKey
 	} else {
-		// Build certificate from scratch
-		certificate = buildCertificateWithSan()
-		subject = buildSubject()
-		certificate.Subject = subject
+		// Initialize certificate from command arguments
+		certificate = buildCertificateSan()
+		certificate.Subject = buildSubject()
+		commonName = certificate.Subject.CommonName
 
 		// Build private and public key
 		privateKey = GenerateKey(bits, curve)
@@ -298,40 +293,39 @@ func buildCertificate(isCa bool, isFromCsr bool) {
 	}
 
 	// Parent
-	if authority != "" && authorityKey != "" {
-		parent = ParsePemCertificate(authority)
-		parentKey = ParsePemPrivateKey(authorityKey)
+	if parent != "" && key != "" {
+		authority = ParsePemCertificate(parent)
+		authorityKey = ParsePemPrivateKey(key)
 	} else {
-		parent = &certificate
-		parentKey = privateKey
+		authority = &certificate
+		authorityKey = privateKey
 	}
 
 	// Build and save certificate
-	name := subject.CommonName
+	name := commonName
 	if isCa {
 		name = name + ".ca"
 	}
 
 	// Build certificate
-	certificateBytes, err := x509.CreateCertificate(rand.Reader, &certificate, parent, publicKey, parentKey)
-	if err != nil {
-		exit(1, "Error occurred while generating certificate: ", err)
-	}
+	certificateBytes, err := x509.CreateCertificate(rand.Reader, &certificate, authority, publicKey, authorityKey)
+	exitOnError(err, "Error occurred while generating certificate: ", err)
 
 	// Save PEM-encoded certificate
 	certificatePem := PemEncode("CERTIFICATE", certificateBytes)
 	SaveFile(getOutputPath(name+".cert.pem"), certificatePem, 0644, true)
 
 	// Save chain files
-	if authority != "" {
-		chainPem := ReadFile(authority)
+	if parent != "" {
+		chainPem := ReadFile(parent)
 		fullchainPem := append(certificatePem, chainPem...)
 		SaveFile(getOutputPath(name+".chain.pem"), chainPem, 0644, true)
 		SaveFile(getOutputPath(name+".fullchain.pem"), fullchainPem, 0644, true)
 	}
 
 	// Save PEM-encoded private key file
-	if !isFromCsr {
+	log(fmt.Sprintf("privateKey type (%T)", privateKey))
+	if privateKey != nil {
 		privateKeyPem := PemEncode("PRIVATE KEY", PrivateKeyPkcs(privateKey))
 		SaveFile(getOutputPath(name+".key.pem"), privateKeyPem, 0644, true)
 	}
@@ -340,43 +334,4 @@ func buildCertificate(isCa bool, isFromCsr bool) {
 	if trust {
 		TrustCertificate(getOutputPath(name + ".cert.pem"))
 	}
-}
-
-// Parse a pem-encoded certificate file
-func ParsePemCertificate(file string) *x509.Certificate {
-	// Decode signing certificate
-	pem := ReadFile(file)
-	data := PemDecode(pem)
-	cert, err := x509.ParseCertificate(data)
-
-	if err != nil {
-		exit(1, "Invalid certificate: ", file)
-	}
-
-	return cert
-}
-
-// Parse a pem-encoded certificate file
-func ParsePemPrivateKey(file string) crypto.PrivateKey {
-	// Decode signing certificate
-	pem := ReadFile(file)
-	data := PemDecode(pem)
-	cert, err := x509.ParsePKCS8PrivateKey(data)
-
-	if err != nil {
-		exit(1, "Invalid private key file: ", file)
-	}
-
-	return cert
-}
-
-// Get private key PKCS #8
-func PrivateKeyPkcs(privateKey crypto.PrivateKey) []byte {
-	key, err := x509.MarshalPKCS8PrivateKey(privateKey)
-
-	if err != nil {
-		exit(1, "Error occurred while getting ca private key PKCS #8. ", err)
-	}
-
-	return key
 }

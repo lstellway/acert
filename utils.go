@@ -29,18 +29,27 @@ func exit(code int, messages ...interface{}) {
 	os.Exit(code)
 }
 
+// Exit program if there is an error
+func exitOnError(err error, messages ...interface{}) {
+	if err != nil {
+		exit(1, messages...)
+	}
+}
+
 // Builds path in output directory
 func getOutputPath(name string) string {
 	return path.Join(outputDirectory, name)
 }
 
-// Build flag set
+// Utility to build a flag set with command options
 func parseFlags(name string, apply func(cmd *flag.FlagSet), flags ...string) *flag.FlagSet {
+	// Create a new flag set
 	flagSet := flag.NewFlagSet(name, flag.ExitOnError)
 
-	// Apply function to flag set
+	// Callback function to modify flag set
 	apply(flagSet)
 
+	// Parse flags and update arguments
 	flagSet.Parse(flags)
 	args = flagSet.Args()
 
@@ -75,9 +84,9 @@ func RequireFileValue(value *string, name string) {
 
 // Saves file
 func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
-	if err := os.WriteFile(name, data, permissions); err != nil {
-		exit(1, "Could not save file: ", name)
-	}
+	// Write to filesystem
+	err := os.WriteFile(name, data, permissions)
+	exitOnError(err, "Could not save file: ", name)
 
 	if report {
 		log("Saved file: ", name)
@@ -87,9 +96,6 @@ func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
 // Split value by delimiter
 func SplitValue(value string, delimiter string) []string {
 	var values []string
-
-	// Trim whitespace
-	value = strings.TrimSpace(value)
 
 	for _, val := range strings.Split(value, delimiter) {
 		val = strings.TrimSpace(val)
@@ -109,7 +115,7 @@ func PromptForInput(message string) (string, error) {
 }
 
 // Force user to provide common name value
-func ForceString(variable *string, message string) string {
+func ForceStringInput(variable *string, message string) string {
 	val := ""
 
 	for strings.TrimSpace(*variable) == "" {
@@ -120,24 +126,10 @@ func ForceString(variable *string, message string) string {
 	return val
 }
 
-// Decode pem-encoded bytes
-func PemDecode(bytes []byte) []byte {
-	data, _ := pem.Decode(bytes)
-
-	if data == nil {
-		exit(1, "Could not parse PEM data")
-	}
-
-	return data.Bytes
-}
-
+// Read file contents
 func ReadFile(file string) []byte {
 	data, err := os.ReadFile(file)
-
-	if err != nil {
-		exit(1, "Could not read file: ", file)
-	}
-
+	exitOnError(err, "Could not read file: ", file)
 	return data
 }
 
@@ -147,4 +139,35 @@ func PemEncode(name string, data []byte) []byte {
 		Type:  name,
 		Bytes: data,
 	})
+}
+
+// Decode pem-encoded bytes
+func PemDecode(bytes []byte, types ...string) []byte {
+	// Decode PEM
+	data, _ := pem.Decode(bytes)
+	if data == nil {
+		exit(1, "Could not parse PEM data")
+	}
+
+	// Ensure PEM file is of expected type
+	if len(types) > 0 {
+		isValid := false
+		for _, name := range types {
+			if data.Type == name {
+				isValid = true
+			}
+		}
+
+		if !isValid {
+			exit(1, "PEM file using ")
+		}
+	}
+
+	return data.Bytes
+}
+
+// Helper to parse contents of a PEM-encoded file
+func ParsePemFile(file string, types ...string) []byte {
+	pem := ReadFile(file)
+	return PemDecode(pem, types...)
 }

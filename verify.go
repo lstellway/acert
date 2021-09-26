@@ -29,10 +29,7 @@ func verify(file string) {
 	}
 
 	_, err := certificate.Verify(options)
-	if err != nil {
-		exit(1, "Certificate could not be verified.", err)
-	}
-	exit(0, "Certificate verified successfully")
+	exitOnError(err, "Certificate could not be verified.", err)
 }
 
 // Verify a certificate
@@ -50,5 +47,6 @@ func VerifyCertificate(flags ...string) {
 		cmd.Usage()
 	default:
 		verify(arg)
+		exit(0, "Certificate verified successfully")
 	}
 }

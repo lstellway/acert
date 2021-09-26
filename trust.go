@@ -39,33 +39,29 @@ func TrustLinux(cert string) {
 		exit(1, "Supported certificate management not found.")
 	}
 
-	// Copy certificate
+	// Build file path
 	file = fmt.Sprintf(file, path.Base(cert), time.Now().Unix())
+
+	// Copy certificate
 	cmd := exec.Command("sudo", "cp", cert, file)
-	if err := cmd.Run(); err != nil {
-		exit(1, err)
-	} else {
-		fmt.Printf("Certificate copied to '%s'", file)
-	}
+	err := cmd.Run()
+	exitOnError(err, err)
+	fmt.Printf("Certificate copied to '%s'", file)
 
 	// Trust certificate
 	cmd = exec.Command("sudo", command...)
-	if err := cmd.Run(); err != nil {
-		exit(1, err)
-	}
+	err = cmd.Run()
+	exitOnError(err, err)
 }
 
 // Trust a certificate on Windows
 func TrustWindows(cert string) {
 	command, err := exec.LookPath("certutil")
-	if err != nil {
-		exit(1, "Could not find 'certutil' command")
-	}
+	exitOnError(err, "Could not find 'certutil' command")
 
 	cmd := exec.Command(command, "-addstore", "-f", "ROOT", cert)
-	if err = cmd.Run(); err != nil {
-		exit(1, err)
-	}
+	err = cmd.Run()
+	exitOnError(err, err)
 }
 
 // Trust a certificate
