@@ -38,7 +38,7 @@ func certificateSubjectFlags(h *CommandSection) {
 
 // Parses generic cryptography flags
 func certificateKeyFlags(h *CommandSection) {
-	h.IntVar(&bits, "bits", 2048, "The size of the key to generate in bits")
+	h.IntVar(&bits, "bits", 2048, "The number of bits used to generate an RSA key")
 	h.BoolVar(&isEd25519, "ed25519", false, "Generate keys using ED25519 signature algorithm")
 	h.BoolVar(&isEcdsa, "ecdsa", false, "Generate keys using ECDSA elliptic curve signature algorithm")
 	h.StringVar(&curve, "curve", "P256", "Elliptic curve used to generate key (P224, P256, P384, P521)")
