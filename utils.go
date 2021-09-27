@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/pem"
-	"flag"
 	"fmt"
 	"os"
 	"path"
@@ -12,7 +11,9 @@ import (
 )
 
 var (
+	basename            string
 	args                []string
+	cmd                 Command
 	now                 = time.Now()
 	outputDirectory     string
 	workingDirectory, _ = os.Getwd()
@@ -36,54 +37,6 @@ func exitOnError(err error, messages ...interface{}) {
 	}
 }
 
-// Builds path in output directory
-func getOutputPath(name string) string {
-	return path.Join(outputDirectory, name)
-}
-
-// Utility to build a flag set with command options
-func parseFlags(name string, apply func(cmd *flag.FlagSet), flags ...string) *flag.FlagSet {
-	// Create a new flag set
-	flagSet := flag.NewFlagSet(name, flag.ExitOnError)
-
-	flagSet.Usage = func() {
-		var usage strings.Builder
-
-		// Command name
-		if len(name) > 0 {
-			fmt.Fprintf(&usage, "Usage of '%s':\n", flagSet.Name())
-		} else {
-			fmt.Fprintf(&usage, "Usage:\n")
-		}
-
-		fmt.Fprint(&usage, "\n  OPTIONS\n")
-
-		// Loop through flags
-		flagSet.VisitAll(func(f *flag.Flag) {
-			defValue := ""
-			if f.DefValue != "" {
-				defValue = fmt.Sprintf("; Default: %v", f.DefValue)
-			}
-
-			_, flagUsage := flag.UnquoteUsage(f)
-			flagUsage = strings.ReplaceAll(flagUsage, "\n", "\n   ")
-			fmt.Fprintf(&usage, "\n  -%s\n   Type: %T%s\n", f.Name, f.DefValue, defValue)
-			fmt.Fprintf(&usage, "   %s\n", flagUsage)
-		})
-
-		fmt.Fprintf(flagSet.Output(), usage.String())
-	}
-
-	// Callback function to modify flag set
-	apply(flagSet)
-
-	// Parse flags and update arguments
-	flagSet.Parse(flags)
-	args = flagSet.Args()
-
-	return flagSet
-}
-
 // Get the next argument
 func getArgument(remove bool) string {
 	arg := ""
@@ -97,6 +50,16 @@ func getArgument(remove bool) string {
 	}
 
 	return arg
+}
+
+// Build command name
+func commandName(name string) string {
+	return fmt.Sprintf("%s %s", basename, name)
+}
+
+// Builds path in output directory
+func getOutputPath(name string) string {
+	return path.Join(outputDirectory, name)
 }
 
 // Checks if a file exists

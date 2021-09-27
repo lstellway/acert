@@ -1,29 +1,33 @@
 package main
 
-import (
-	"flag"
-)
-
 // Initializes the certificate signing request subcommand
 func CertificateRequest(flags ...string) {
-	// Parse command flags
-	cmd := parseFlags("request", func(cmd *flag.FlagSet) {
-		certificateSubjectFlags(cmd)
-		certificateKeyFlags(cmd)
+	// Initialize command
+	cmd, args = NewCommand(commandName("request"), "Create a PKI certificate signing request", func(h *Command) {
+		h.AddSection("Subject Name Options", func(s *CommandSection) {
+			certificateSubjectFlags(s)
+		})
+		h.AddSection("Private Key Options", func(s *CommandSection) {
+			certificateKeyFlags(s)
+		})
+
+		h.AddSubcommand("sign", "Create a PKI certificate from a signing request")
 	}, flags...)
 
 	switch getArgument(true) {
 	case "help":
 		cmd.Usage()
 	case "sign":
-		// Parse command flags
-		parseFlags("sign", func(cmd *flag.FlagSet) {
-			certificateBuildFlags(cmd)
-		}, flags[1:]...)
+		// Initialize command
+		cmd, args = NewCommand(commandName("request sign"), "Create a PKI certificate from a signing request", func(h *Command) {
+			h.AddSection("Certificate", func(s *CommandSection) {
+				certificateBuildFlags(s)
+				s.IntVar(&pathLenConstraint, "pathLength", 0, "Maximum number of non-self-issued intermediate certificates that may follow this certificate in a valid certification path (for certificate chaining)")
+			})
+		}, args...)
 
 		// First argument should be path to signing request file
 		csr = getArgument(true)
-
 		buildCertificate(false, true)
 	default:
 		privateKey, request := buildCertificateRequest()

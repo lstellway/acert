@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/x509"
-	"flag"
 )
 
 // Verify a certificate with configured options
@@ -35,11 +34,15 @@ func verify(file string) {
 
 // Verify a certificate
 func VerifyCertificate(flags ...string) {
-	// Parse command flags
-	cmd := parseFlags("verify", func(cmd *flag.FlagSet) {
-		cmd.StringVar(&host, "host", "", "Host name to verify")
-		cmd.StringVar(&root, "root", "", "Trusted root certificate")
-		cmd.StringVar(&intermediate, "intermediate", "", "Intermediate certificate")
+	// Initialize command
+	cmd, args = NewCommand(commandName("verify"), "Verify a PKI certificate", func(h *Command) {
+		h.AddSection("Options", func(s *CommandSection) {
+			s.StringVar(&host, "host", "", "Host name to verify")
+			s.StringVar(&root, "root", "", "Trusted root certificate")
+			s.StringVar(&intermediate, "intermediate", "", "Intermediate certificate")
+		})
+
+		h.AddExample("Verify a certificate authority named 'local.ca.cert.pem'", "local.ca.cert.pem")
 	}, flags...)
 
 	arg := getArgument(true)

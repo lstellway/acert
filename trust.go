@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os/exec"
 	"path"
@@ -66,8 +65,11 @@ func TrustWindows(cert string) {
 
 // Trust a certificate
 func TrustCertificate(flags ...string) {
-	// Parse command flags
-	parseFlags("trust", func(cmd *flag.FlagSet) {}, flags...)
+	// Initialize command
+	cmd, args = NewCommand(commandName("trust"), "Trust a PKI certificate", func(h *Command) {
+		h.AddArgument("FILE")
+		h.AddExample("Trust a signing request file named 'test.com.csr.pem'", "test.com.csr.pem")
+	}, flags...)
 
 	// Check if file exists
 	cert := getArgument(true)
