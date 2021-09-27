@@ -37,7 +37,7 @@ func certificateSubjectFlags(cmd *flag.FlagSet) {
 	cmd.StringVar(&organizationalUnit, "organizationUnit", "", "Organizational Unit Name (eg, section)")
 	cmd.StringVar(&commonName, "commonName", "", "Certificate common name (required)")
 	cmd.StringVar(&email, "email", "", "Email Address")
-	cmd.StringVar(&san, "san", "", "Comma-delimited Subject Alternative Names (DNS, Email, IP, URI)")
+	cmd.StringVar(&san, "san", "", "Comma-delimited Subject Alternative Name(s) (DNS, Email, IP, URI)")
 }
 
 // Parses generic cryptography flags
@@ -51,7 +51,7 @@ func certificateKeyFlags(cmd *flag.FlagSet) {
 // Flags to sign a certificate using parent certificate
 func certificateBuildFlags(cmd *flag.FlagSet) {
 	cmd.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
-	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate\n(default false)")
+	cmd.BoolVar(&trust, "trust", false, "Trust generated certificate")
 	cmd.StringVar(&parent, "parent", "", "Path to PEM-encoded certificate used to sign certificate (authority or intermediate certificate)")
 	cmd.StringVar(&key, "key", "", "Path to PEM-encoded private key used to sign certificate")
 }
@@ -59,13 +59,13 @@ func certificateBuildFlags(cmd *flag.FlagSet) {
 // Build certificate
 func Certificate(flags ...string) {
 	// Parse command flags
-	cmd := parseFlags("cert", func(cmd *flag.FlagSet) {
+	cmd := parseFlags("certificate", func(cmd *flag.FlagSet) {
 		certificateSubjectFlags(cmd)
 		certificateKeyFlags(cmd)
 		certificateBuildFlags(cmd)
 	}, flags...)
 
-	switch flags[0] {
+	switch getArgument(true) {
 	case "help":
 		cmd.Usage()
 	default:

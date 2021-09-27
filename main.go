@@ -7,7 +7,7 @@ import (
 func main() {
 	args = os.Args[1:]
 
-	switch getArgument() {
+	switch getArgument(true) {
 	case "ca", "authority":
 		CertificateAuthority(args...)
 	case "cert", "certificate":

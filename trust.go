@@ -70,10 +70,8 @@ func TrustCertificate(flags ...string) {
 	parseFlags("trust", func(cmd *flag.FlagSet) {}, flags...)
 
 	// Check if file exists
-	cert := getArgument()
-	if !FileExists(cert) {
-		exit(1, "The specified certificate could not be found:", cert)
-	}
+	cert := getArgument(true)
+	RequireFileValue(&cert, "certificate")
 
 	// Execute trust strategy based on OS
 	log("Sudo permissions are required to trust certificates")

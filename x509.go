@@ -81,7 +81,7 @@ func GenerateKey(bits int, standard string) crypto.PrivateKey {
 		_, privateKey, err = ed25519.GenerateKey(rand.Reader)
 	case isEcdsa:
 		var curve elliptic.Curve
-		standard = strings.TrimSpace(strings.ToLower(standard))
+		standard = strings.ToLower(strings.TrimSpace(standard))
 
 		switch standard {
 		case "p224":
@@ -226,7 +226,6 @@ func buildCertificate(isCa bool, isFromCsr bool) {
 		privateKey, authorityKey crypto.PrivateKey
 		authority                *x509.Certificate
 		certificate              x509.Certificate
-		commonName               string
 	)
 
 	// Validations
@@ -243,7 +242,6 @@ func buildCertificate(isCa bool, isFromCsr bool) {
 		request := ParsePemCertificateRequest(csr)
 		certificate = x509.Certificate{}
 		DecorateCertificateFromRequest(&certificate, *request)
-		commonName = certificate.Subject.CommonName
 
 		// Use request public key
 		publicKey = request.PublicKey
@@ -251,7 +249,6 @@ func buildCertificate(isCa bool, isFromCsr bool) {
 		// Initialize certificate from command arguments
 		certificate = buildCertificateSan()
 		certificate.Subject = buildSubject()
-		commonName = certificate.Subject.CommonName
 
 		// Build private and public key
 		privateKey = GenerateKey(bits, curve)

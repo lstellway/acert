@@ -7,14 +7,14 @@ import (
 // Initializes the certificate signing request subcommand
 func CertificateAuthority(flags ...string) {
 	// Parse command flags
-	cmd := parseFlags("ca", func(cmd *flag.FlagSet) {
+	cmd := parseFlags("authority", func(cmd *flag.FlagSet) {
 		certificateSubjectFlags(cmd)
 		certificateKeyFlags(cmd)
 		certificateBuildFlags(cmd)
 		cmd.IntVar(&pathLenConstraint, "pathLength", 0, "Maximum number of non-self-issued intermediate certificates that may follow this certificate in a valid certification path (for certificate chaining)")
 	}, flags...)
 
-	switch flags[0] {
+	switch getArgument(true) {
 	case "help":
 		cmd.Usage()
 	default:

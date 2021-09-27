@@ -46,6 +46,34 @@ func parseFlags(name string, apply func(cmd *flag.FlagSet), flags ...string) *fl
 	// Create a new flag set
 	flagSet := flag.NewFlagSet(name, flag.ExitOnError)
 
+	flagSet.Usage = func() {
+		var usage strings.Builder
+
+		// Command name
+		if len(name) > 0 {
+			fmt.Fprintf(&usage, "Usage of '%s':\n", flagSet.Name())
+		} else {
+			fmt.Fprintf(&usage, "Usage:\n")
+		}
+
+		fmt.Fprint(&usage, "\n  OPTIONS\n")
+
+		// Loop through flags
+		flagSet.VisitAll(func(f *flag.Flag) {
+			defValue := ""
+			if f.DefValue != "" {
+				defValue = fmt.Sprintf("; Default: %v", f.DefValue)
+			}
+
+			_, flagUsage := flag.UnquoteUsage(f)
+			flagUsage = strings.ReplaceAll(flagUsage, "\n", "\n   ")
+			fmt.Fprintf(&usage, "\n  -%s\n   Type: %T%s\n", f.Name, f.DefValue, defValue)
+			fmt.Fprintf(&usage, "   %s\n", flagUsage)
+		})
+
+		fmt.Fprintf(flagSet.Output(), usage.String())
+	}
+
 	// Callback function to modify flag set
 	apply(flagSet)
 
@@ -57,13 +85,18 @@ func parseFlags(name string, apply func(cmd *flag.FlagSet), flags ...string) *fl
 }
 
 // Get the next argument
-func getArgument() string {
+func getArgument(remove bool) string {
+	arg := ""
+
 	if len(args) > 0 {
-		arg := args[0]
-		args = args[1:]
-		return arg
+		arg = args[0]
+
+		if remove {
+			args = args[1:]
+		}
 	}
-	return ""
+
+	return arg
 }
 
 // Checks if a file exists
@@ -77,7 +110,7 @@ func RequireFileValue(value *string, name string) {
 	*value = strings.TrimSpace(*value)
 
 	if *value == "" || !FileExists(*value) {
-		message := fmt.Sprintf("File for '%s' not found: %s", name, *value)
+		message := fmt.Sprintf("File for '%s' argument not found: %s", name, *value)
 		exit(1, message)
 	}
 }

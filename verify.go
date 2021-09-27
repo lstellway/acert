@@ -30,6 +30,7 @@ func verify(file string) {
 
 	_, err := certificate.Verify(options)
 	exitOnError(err, "Certificate could not be verified.", err)
+	log("Certificate verified successfully")
 }
 
 // Verify a certificate
@@ -41,12 +42,11 @@ func VerifyCertificate(flags ...string) {
 		cmd.StringVar(&intermediate, "intermediate", "", "Intermediate certificate")
 	}, flags...)
 
-	arg := getArgument()
+	arg := getArgument(true)
 	switch arg {
-	case "help":
+	case "", "help":
 		cmd.Usage()
 	default:
 		verify(arg)
-		exit(0, "Certificate verified successfully")
 	}
 }

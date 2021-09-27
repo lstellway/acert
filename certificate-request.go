@@ -7,12 +7,12 @@ import (
 // Initializes the certificate signing request subcommand
 func CertificateRequest(flags ...string) {
 	// Parse command flags
-	cmd := parseFlags("csr", func(cmd *flag.FlagSet) {
+	cmd := parseFlags("request", func(cmd *flag.FlagSet) {
 		certificateSubjectFlags(cmd)
 		certificateKeyFlags(cmd)
 	}, flags...)
 
-	switch getArgument() {
+	switch getArgument(true) {
 	case "help":
 		cmd.Usage()
 	case "sign":
@@ -22,7 +22,7 @@ func CertificateRequest(flags ...string) {
 		}, flags[1:]...)
 
 		// First argument should be path to signing request file
-		csr = getArgument()
+		csr = getArgument(true)
 
 		buildCertificate(false, true)
 	default:
