@@ -1,4 +1,4 @@
-package main
+package acert
 
 import (
 	"crypto"
@@ -18,7 +18,8 @@ import (
 	"time"
 )
 
-// Parse a pem-encoded certificate file
+// ParsePemCertificate reads a specified PEM-encoded
+// certificate file and parses it into a x509.Certificate object
 func ParsePemCertificate(file string) *x509.Certificate {
 	data := ParsePemFile(file, "CERTIFICATE")
 	cert, err := x509.ParseCertificate(data)
@@ -26,7 +27,8 @@ func ParsePemCertificate(file string) *x509.Certificate {
 	return cert
 }
 
-// Parse a pem-encoded certificate file
+// ParsePemCertificateRequest reads a specified PEM-encoded
+// certificate request file and parses it into a x509.CertificateRequest object
 func ParsePemCertificateRequest(file string) *x509.CertificateRequest {
 	data := ParsePemFile(file, "CERTIFICATE REQUEST", "NEW CERTIFICATE REQUEST")
 	cert, err := x509.ParseCertificateRequest(data)
@@ -34,7 +36,8 @@ func ParsePemCertificateRequest(file string) *x509.CertificateRequest {
 	return cert
 }
 
-// Parse a pem-encoded certificate file
+// ParsePemPrivateKey reads a specified PEM-encoded
+// private key file and parses it into a crypto.PrivateKey object
 func ParsePemPrivateKey(file string) crypto.PrivateKey {
 	data := ParsePemFile(file, "PRIVATE KEY")
 	cert, err := x509.ParsePKCS8PrivateKey(data)
@@ -49,7 +52,9 @@ func PrivateKeyPkcs(privateKey crypto.PrivateKey) []byte {
 	return key
 }
 
-// Build subject alternative name data
+// ParseSanHosts takes a string array and
+// returns a new x509.Certificate populated with parsed
+// subject alternative name values
 func ParseSanHosts(hosts []string) x509.Certificate {
 	template := x509.Certificate{}
 
@@ -69,21 +74,45 @@ func ParseSanHosts(hosts []string) x509.Certificate {
 	return template
 }
 
-// Generate a private key
-func GenerateKey(bits int, standard string) crypto.PrivateKey {
+// getKeyType returns the name fo the configured algorithm
+func getKeyAlgorithm() string {
+	switch {
+	case isEd25519:
+		return "ed25519"
+	case isEcdsa:
+		return "ecdsa"
+	default:
+		return "rsa"
+	}
+}
+
+// GenerateKey builds a key with the specified algorithm.
+// The number of bits can be specified for the default RSA algorithm.
+//
+// Valid algorithm names are
+//     ed25519
+//     ecdsa
+//     rsa
+//
+// The following curve standard values can be specified
+// when using the ECDSA algorithm:
+//     p224
+//     p256
+//     p384
+//     p521
+func GenerateKey(algorithm string, bits int, standard string) crypto.PrivateKey {
 	var (
 		privateKey crypto.PrivateKey
 		err        error
 	)
 
-	switch {
-	case isEd25519:
+	switch strings.ToLower(algorithm) {
+	case "ed25519":
 		_, privateKey, err = ed25519.GenerateKey(rand.Reader)
-	case isEcdsa:
+	case "ecdsa":
 		var curve elliptic.Curve
-		standard = strings.ToLower(strings.TrimSpace(standard))
 
-		switch standard {
+		switch strings.ToLower(strings.TrimSpace(standard)) {
 		case "p224":
 			curve = elliptic.P224()
 		case "p384":
@@ -103,7 +132,8 @@ func GenerateKey(bits int, standard string) crypto.PrivateKey {
 	return privateKey
 }
 
-// Generate serial number
+// GenerateSerialNumber creates a random serial number.
+// This function is used to generate serial numbers for x509 certificates.
 func GenerateSerialNumber() *big.Int {
 	// Set limit
 	limit := new(big.Int).Lsh(big.NewInt(1), 128)
@@ -114,7 +144,8 @@ func GenerateSerialNumber() *big.Int {
 	return serial
 }
 
-// Build certificate from signing request
+// DecorateCertificateFromRequest populates an x509 certificate
+// with values from a certificate signing request.
 func DecorateCertificateFromRequest(certificate *x509.Certificate, request x509.CertificateRequest) {
 	certificate.Subject = request.Subject
 	certificate.Extensions = request.Extensions
@@ -151,7 +182,7 @@ func buildCertificateSan() x509.Certificate {
 	return ParseSanHosts(hosts)
 }
 
-// Build certificate subject
+// buildSubject builds a PKIX subject name using input variables.
 func buildSubject() pkix.Name {
 	name := pkix.Name{
 		ExtraNames: []pkix.AttributeTypeAndValue{},
@@ -201,7 +232,7 @@ func buildSubject() pkix.Name {
 // Generate certificate signing request
 func buildCertificateRequest() (crypto.PrivateKey, []byte) {
 	// Generate private key
-	privateKey := GenerateKey(bits, curve)
+	privateKey := GenerateKey(getKeyAlgorithm(), bits, curve)
 
 	// Build request template
 	certificate := buildCertificateSan()
@@ -251,7 +282,7 @@ func buildCertificate(isCa bool, isFromCsr bool) {
 		certificate.Subject = buildSubject()
 
 		// Build private and public key
-		privateKey = GenerateKey(bits, curve)
+		privateKey = GenerateKey(getKeyAlgorithm(), bits, curve)
 		publicKey = privateKey.(crypto.Signer).Public()
 	}
 

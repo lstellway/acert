@@ -1,4 +1,4 @@
-package main
+package acert
 
 import (
 	"crypto/x509"
@@ -34,7 +34,7 @@ func verify(file string) {
 	log("Certificate verified successfully")
 }
 
-// Verify a certificate
+// VerifyCertificate validates a certificate root, chain and/or host name.
 func VerifyCertificate(flags ...string) {
 	// Initialize command
 	cmd, args = command.NewCommand(commandName("verify"), "Verify a PKI certificate", func(h *command.Command) {

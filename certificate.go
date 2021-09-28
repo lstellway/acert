@@ -1,4 +1,4 @@
-package main
+package acert
 
 import (
 	"github.com/lstellway/go/command"
@@ -56,7 +56,7 @@ func certificateBuildFlags(h *command.CommandSection) {
 	h.StringVar(&key, "key", "", "Path to PEM-encoded private key used to sign certificate")
 }
 
-// Build certificate
+// CertificateAuthority handles command-line input arguments to create a PKI certificate.
 func Certificate(flags ...string) {
 	// Initialize command
 	cmd, args = command.NewCommand(commandName("certificate"), "Create a PKI certificate", func(h *command.Command) {

@@ -1,4 +1,4 @@
-package main
+package acert
 
 import (
 	"bufio"
@@ -64,13 +64,14 @@ func getOutputPath(name string) string {
 	return path.Join(outputDirectory, name)
 }
 
-// Checks if a file exists
+// FileExists checks if a file exists
 func FileExists(name string) bool {
 	_, err := os.Stat(name)
 	return err == nil
 }
 
-// Require a string value from standard input
+// RequireFileValue checks that a string variable contains a path
+// to a file that exists on the filesystem.
 func RequireFileValue(value *string, name string) {
 	*value = strings.TrimSpace(*value)
 
@@ -80,7 +81,9 @@ func RequireFileValue(value *string, name string) {
 	}
 }
 
-// Saves file
+// SaveFile saves a file to the filesystem with a specified name
+// and specified permissions.
+// There is an option to determine whether or not to report success.
 func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
 	// Write to filesystem
 	err := os.WriteFile(name, data, permissions)
@@ -91,7 +94,8 @@ func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
 	}
 }
 
-// Split value by delimiter
+// SplitValue splits a string value by a delimiter and returns a string array with the values.
+// Values are trimmed of whitespace and empty values are ignored.
 func SplitValue(value string, delimiter string) []string {
 	var values []string
 
@@ -105,14 +109,16 @@ func SplitValue(value string, delimiter string) []string {
 	return values
 }
 
-// Prompt for user input
+// PromptForInput prints a message to the console.
+// The script will then return the user's input from stdin.
 func PromptForInput(message string) (string, error) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print(message)
 	return reader.ReadString('\n')
 }
 
-// Force user to provide common name value
+// ForceStringInput will repeatedly prompt a user for input
+// until a non-empty string value is inputted.
 func ForceStringInput(variable *string, message string) string {
 	val := ""
 
@@ -124,14 +130,14 @@ func ForceStringInput(variable *string, message string) string {
 	return val
 }
 
-// Read file contents
+// ReadFile returns the byte contents of a specified file
 func ReadFile(file string) []byte {
 	data, err := os.ReadFile(file)
 	exitOnError(err, "Could not read file:", file)
 	return data
 }
 
-// Pem encode data
+// PemEncode PEM-encodes an input byte array of a specified type.
 func PemEncode(name string, data []byte) []byte {
 	return pem.EncodeToMemory(&pem.Block{
 		Type:  name,
@@ -139,7 +145,8 @@ func PemEncode(name string, data []byte) []byte {
 	})
 }
 
-// Decode pem-encoded bytes
+// PemDecode decodes a PEM-encoded file of a specified type.
+// Multiple types can be passed, each of which is considered valid.
 func PemDecode(bytes []byte, types ...string) []byte {
 	// Decode PEM
 	data, _ := pem.Decode(bytes)
@@ -165,7 +172,7 @@ func PemDecode(bytes []byte, types ...string) []byte {
 	return data.Bytes
 }
 
-// Helper to parse contents of a PEM-encoded file
+// ParsePemFile parses the contents of specified PEM-encoded file
 func ParsePemFile(file string, types ...string) []byte {
 	pem := ReadFile(file)
 	return PemDecode(pem, types...)

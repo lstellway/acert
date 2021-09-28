@@ -1,4 +1,4 @@
-package main
+package acert
 
 import (
 	"fmt"
@@ -10,13 +10,13 @@ import (
 	"github.com/lstellway/go/command"
 )
 
-// Trust a certificate on Darwin (MacOS)
+// TrustDarwin trust a PKI certificate on macOS (Darwin)
 func TrustDarwin(cert string) {
 	cmd := exec.Command("sudo", "security", "add-trusted-cert", "-d", "-r", "trustRoot", "-k", "/Library/Keychains/System.keychain", cert)
 	cmd.Run()
 }
 
-// Trust a certificate on Linux
+// TrustLinux trust a PKI certificate on Linux
 func TrustLinux(cert string) {
 	var (
 		command []string
@@ -55,7 +55,7 @@ func TrustLinux(cert string) {
 	exitOnError(err, err)
 }
 
-// Trust a certificate on Windows
+// TrustWindows trust a PKI certificate on Windows
 func TrustWindows(cert string) {
 	command, err := exec.LookPath("certutil")
 	exitOnError(err, "Could not find 'certutil' command")
@@ -65,7 +65,9 @@ func TrustWindows(cert string) {
 	exitOnError(err, err)
 }
 
-// Trust a certificate
+// TrustCertificate trusts a PKI certificate.
+// The method used to trust is determined based on the operating system
+// and available tools installed on the machine.
 func TrustCertificate(flags ...string) {
 	// Initialize command
 	cmd, args = command.NewCommand(commandName("trust"), "Trust a PKI certificate", func(h *command.Command) {

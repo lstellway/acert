@@ -1,8 +1,8 @@
-package main
+package acert
 
 import "github.com/lstellway/go/command"
 
-// Initializes the certificate signing request subcommand
+// CertificateAuthority handles command-line input arguments to create a PKI certificate authority.
 func CertificateAuthority(flags ...string) {
 	// Initialize command
 	cmd, args = command.NewCommand(commandName("authority"), "Create a PKI certificate authority", func(h *command.Command) {
