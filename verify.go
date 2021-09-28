@@ -2,6 +2,8 @@ package main
 
 import (
 	"crypto/x509"
+
+	"github.com/lstellway/go/command"
 )
 
 // Verify a certificate with configured options
@@ -35,8 +37,8 @@ func verify(file string) {
 // Verify a certificate
 func VerifyCertificate(flags ...string) {
 	// Initialize command
-	cmd, args = NewCommand(commandName("verify"), "Verify a PKI certificate", func(h *Command) {
-		h.AddSection("Options", func(s *CommandSection) {
+	cmd, args = command.NewCommand(commandName("verify"), "Verify a PKI certificate", func(h *command.Command) {
+		h.AddSection("Options", func(s *command.CommandSection) {
 			s.StringVar(&host, "host", "", "Host name to verify")
 			s.StringVar(&root, "root", "", "Trusted root certificate")
 			s.StringVar(&intermediate, "intermediate", "", "Intermediate certificate")

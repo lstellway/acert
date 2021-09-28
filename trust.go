@@ -6,6 +6,8 @@ import (
 	"path"
 	"runtime"
 	"time"
+
+	"github.com/lstellway/go/command"
 )
 
 // Trust a certificate on Darwin (MacOS)
@@ -66,7 +68,7 @@ func TrustWindows(cert string) {
 // Trust a certificate
 func TrustCertificate(flags ...string) {
 	// Initialize command
-	cmd, args = NewCommand(commandName("trust"), "Trust a PKI certificate", func(h *Command) {
+	cmd, args = command.NewCommand(commandName("trust"), "Trust a PKI certificate", func(h *command.Command) {
 		h.AddArgument("FILE")
 		h.AddExample("Trust a signing request file named 'test.com.csr.pem'", "test.com.csr.pem")
 	}, flags...)

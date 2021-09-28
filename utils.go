@@ -8,12 +8,14 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/lstellway/go/command"
 )
 
 var (
-	basename            string
+	basename            = "acert"
 	args                []string
-	cmd                 Command
+	cmd                 command.Command
 	now                 = time.Now()
 	outputDirectory     string
 	workingDirectory, _ = os.Getwd()

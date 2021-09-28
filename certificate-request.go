@@ -1,13 +1,15 @@
 package main
 
+import "github.com/lstellway/go/command"
+
 // Initializes the certificate signing request subcommand
 func CertificateRequest(flags ...string) {
 	// Initialize command
-	cmd, args = NewCommand(commandName("request"), "Create a PKI certificate signing request", func(h *Command) {
-		h.AddSection("Subject Name Options", func(s *CommandSection) {
+	cmd, args = command.NewCommand(commandName("request"), "Create a PKI certificate signing request", func(h *command.Command) {
+		h.AddSection("Subject Name Options", func(s *command.CommandSection) {
 			certificateSubjectFlags(s)
 		})
-		h.AddSection("Private Key Options", func(s *CommandSection) {
+		h.AddSection("Private Key Options", func(s *command.CommandSection) {
 			certificateKeyFlags(s)
 		})
 
@@ -19,8 +21,8 @@ func CertificateRequest(flags ...string) {
 		cmd.Usage()
 	case "sign":
 		// Initialize command
-		cmd, args = NewCommand(commandName("request sign"), "Create a PKI certificate from a signing request", func(h *Command) {
-			h.AddSection("Certificate", func(s *CommandSection) {
+		cmd, args = command.NewCommand(commandName("request sign"), "Create a PKI certificate from a signing request", func(h *command.Command) {
+			h.AddSection("Certificate", func(s *command.CommandSection) {
 				certificateBuildFlags(s)
 				s.IntVar(&pathLenConstraint, "pathLength", 0, "Maximum number of non-self-issued intermediate certificates that may follow this certificate in a valid certification path (for certificate chaining)")
 			})

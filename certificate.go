@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/lstellway/go/command"
+)
+
 var (
 	// General
 	bits, days, pathLenConstraint int
@@ -23,7 +27,7 @@ var (
 )
 
 // Flags used to build the certificate subject
-func certificateSubjectFlags(h *CommandSection) {
+func certificateSubjectFlags(h *command.CommandSection) {
 	h.StringVar(&country, "country", "", "Country Name (2 letter ISO-3166 code)")
 	h.StringVar(&province, "province", "", "State or Province Name (full name)")
 	h.StringVar(&locality, "locality", "", "Locality Name (eg, city)")
@@ -37,7 +41,7 @@ func certificateSubjectFlags(h *CommandSection) {
 }
 
 // Parses generic cryptography flags
-func certificateKeyFlags(h *CommandSection) {
+func certificateKeyFlags(h *command.CommandSection) {
 	h.IntVar(&bits, "bits", 2048, "The number of bits used to generate an RSA key")
 	h.BoolVar(&isEd25519, "ed25519", false, "Generate keys using ED25519 signature algorithm")
 	h.BoolVar(&isEcdsa, "ecdsa", false, "Generate keys using ECDSA elliptic curve signature algorithm")
@@ -45,7 +49,7 @@ func certificateKeyFlags(h *CommandSection) {
 }
 
 // Flags to sign a certificate using parent certificate
-func certificateBuildFlags(h *CommandSection) {
+func certificateBuildFlags(h *command.CommandSection) {
 	h.IntVar(&days, "days", 90, "Number of days generated certificates should be valid for")
 	h.BoolVar(&trust, "trust", false, "Trust generated certificate")
 	h.StringVar(&parent, "parent", "", "Path to PEM-encoded certificate used to sign certificate (authority or intermediate certificate)")
@@ -55,14 +59,14 @@ func certificateBuildFlags(h *CommandSection) {
 // Build certificate
 func Certificate(flags ...string) {
 	// Initialize command
-	cmd, args = NewCommand(commandName("certificate"), "Create a PKI certificate", func(h *Command) {
-		h.AddSection("Subject Name Options", func(s *CommandSection) {
+	cmd, args = command.NewCommand(commandName("certificate"), "Create a PKI certificate", func(h *command.Command) {
+		h.AddSection("Subject Name Options", func(s *command.CommandSection) {
 			certificateSubjectFlags(s)
 		})
-		h.AddSection("Private Key Options", func(s *CommandSection) {
+		h.AddSection("Private Key Options", func(s *command.CommandSection) {
 			certificateKeyFlags(s)
 		})
-		h.AddSection("Certificate Options", func(s *CommandSection) {
+		h.AddSection("Certificate Options", func(s *command.CommandSection) {
 			certificateBuildFlags(s)
 		})
 	}, flags...)

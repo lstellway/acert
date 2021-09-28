@@ -2,13 +2,12 @@ package main
 
 import (
 	"os"
-	"path"
+
+	"github.com/lstellway/go/command"
 )
 
 func main() {
-	basename = path.Base(os.Args[0])
-
-	cmd, args = NewCommand(basename, "", func(h *Command) {
+	cmd, args = command.NewCommand(basename, "", func(h *command.Command) {
 		h.AddSubcommand("authority", "Create a PKI certificate authority")
 		h.AddSubcommand("certificate", "Create a PKI certificate")
 		h.AddSubcommand("request", "Create a PKI certificate signing request")
