@@ -7,13 +7,18 @@ import (
 // buildAcertCertificate configures an Acert object,
 // builds a certificate and saves the resulting files
 func buildAcertCertificate(a *Acert, isCa bool) {
-	// Wire up CLI options
+	// Map CLI options
 	configureAcert(a)
 
-	// Build certificate and save PEM files
+	// Build certificate and save certificate PEM files
 	bytes := a.BuildCertificate(isCa)
-	savePrivateKeyPem(commonName, a.PrivateKey)
-	saveCertificatePem(commonName, bytes, trust)
+	saveCertificatePem(a.Subject.CommonName, bytes, trust)
+
+	// Private key may be nil when signing a request
+	// If there is a private key, save the PEM file
+	if a.PrivateKey != nil {
+		savePrivateKeyPem(a.Subject.CommonName, a.PrivateKey)
+	}
 }
 
 // certificateCommandOptions wires up common options for
@@ -41,20 +46,14 @@ func certificate(flags ...string) {
 	// Initialize command
 	cmd, args = command.NewCommand(commandName("certificate"), "Create a PKI certificate", func(h *command.Command) {
 		certificateCommandOptions(h, false, false)
+		h.AddSubcommand("help", "Display this help screen")
 	}, flags...)
 
 	switch getArgument(true) {
 	case "help":
 		cmd.Usage()
 	default:
-		// Validations
-		requireFileValue(&key, "key")
-		requireFileValue(&parent, "parent")
-
-		buildAcertCertificate(&Acert{
-			RootPrivateKey:  parsePemPrivateKey(key),
-			RootCertificate: *parsePemCertificate(parent),
-		}, false)
+		buildAcertCertificate(&Acert{}, false)
 	}
 }
 
@@ -63,21 +62,14 @@ func certificateAuthority(flags ...string) {
 	// Initialize command
 	cmd, args = command.NewCommand(commandName("authority"), "Create a PKI certificate authority", func(h *command.Command) {
 		certificateCommandOptions(h, true, false)
+		h.AddSubcommand("help", "Display this help screen")
 	}, flags...)
 
 	switch getArgument(true) {
 	case "help":
 		cmd.Usage()
 	default:
-		a := Acert{}
-
-		// Configure parent certificate
-		if key != "" || parent != "" {
-			a.RootPrivateKey = parsePemPrivateKey(key)
-			a.RootCertificate = *parsePemCertificate(parent)
-		}
-
-		buildAcertCertificate(&a, true)
+		buildAcertCertificate(&Acert{}, true)
 	}
 }
 
@@ -87,6 +79,8 @@ func certificateRequest(flags ...string) {
 	// Initialize command
 	cmd, args = command.NewCommand(commandName("request"), "Create a PKI certificate signing request", func(h *command.Command) {
 		certificateCommandOptions(h, false, true)
+
+		h.AddSubcommand("help", "Display this help screen")
 		h.AddSubcommand("sign", "Create a PKI certificate from a signing request")
 	}, flags...)
 
@@ -99,21 +93,34 @@ func certificateRequest(flags ...string) {
 			h.AddSection("Certificate", func(s *command.CommandSection) {
 				certificateBuildFlags(s)
 			})
+
+			h.AddArgument("SIGNING_REQUEST")
+			h.AddSubcommand("help", "Display this help screen")
 		}, args...)
 
-		// Sign a certificate using a signing request
-		buildAcertCertificate(&Acert{
-			RootPrivateKey:  parsePemPrivateKey(key),
-			RootCertificate: *parsePemCertificate(parent),
-			Request:         *parsePemCertificateRequest(getArgument(true)),
-		}, false)
+		// Requires parent certificate to sign request
+		arg := getArgument(true)
+
+		switch arg {
+		case "", "help":
+			cmd.Usage()
+		default:
+			requireFileValue(&arg, "SIGNING_REQUEST")
+			requireFileValue(&parent, "parent")
+			requireFileValue(&key, "key")
+
+			// Sign a certificate using a signing request
+			buildAcertCertificate(&Acert{
+				Request: *parsePemCertificateRequest(arg),
+			}, false)
+		}
 	default:
 		// Build certificate signing request
 		a := Acert{}
 		configureAcert(&a)
 		request := a.BuildCertificateRequest()
-		savePrivateKeyPem(commonName, a.PrivateKey)
-		saveCertificateRequestPem(commonName, request)
+		savePrivateKeyPem(a.Subject.CommonName, a.PrivateKey)
+		saveCertificateRequestPem(a.Subject.CommonName, request)
 	}
 }
 
@@ -132,6 +139,8 @@ func verifyCertificate(flags ...string) {
 		h.AddExample("Verify certificate hosts for a certificate named 'test.com.cert.pem'", "-hosts test.com test.com.cert.pem")
 		h.AddExample("Verify a certificate root", "-root root.ca.cert.pem test.com.cert.pem")
 		h.AddExample("Verify a certificate chain", "-root root.ca.cert.pem -intermediate intermediate.ca.cert.pem test.com.cert.pem")
+
+		h.AddSubcommand("help", "Display this help screen")
 	}, flags...)
 
 	// Get first argument
@@ -141,7 +150,10 @@ func verifyCertificate(flags ...string) {
 	case "", "help":
 		cmd.Usage()
 	default:
-		requireFileValue(&arg, "certificate")
+		// Validate required files are set
+		requireFileValue(&arg, "CERTIFICATE_FILE")
+		requireFileValue(&root, "root")
+
 		a := Acert{
 			Certificate: *parsePemCertificate(arg),
 		}

@@ -236,6 +236,7 @@ func saveCertificatePem(name string, bytes []byte, trust bool) {
 
 	// Trust certificate
 	if trust {
+		log("Sudo permissions are required to trust certificates")
 		Trust(getOutputPath(name + ".cert.pem"))
 	}
 }

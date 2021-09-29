@@ -88,10 +88,12 @@ func Trust(cert string) {
 func trustCertificates(flags ...string) {
 	// Initialize command
 	cmd, args = command.NewCommand(commandName("trust"), "Trust PKI certificates", func(h *command.Command) {
-		h.AddArgument("CERTIFICATE_FILE")
+		h.AddArgument("CERTIFICATE_FILES...")
 
 		h.AddExample("Trust a single certificate", "test.com.csr.pem")
 		h.AddExample("Trust multiple certificates", "local-root.ca.cert.pem remote.ca.cert.pem test.com.csr.pem")
+
+		h.AddSubcommand("help", "Display this help screen")
 	}, flags...)
 
 	switch getArgument(true) {

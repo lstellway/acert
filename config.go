@@ -107,6 +107,12 @@ func buildSubject() pkix.Name {
 
 // configureAcert applies configuration values from the CLI input to the Acert object
 func configureAcert(a *Acert) {
+	// Add parent key
+	if key != "" || parent != "" {
+		a.RootPrivateKey = parsePemPrivateKey(key)
+		a.RootCertificate = *parsePemCertificate(parent)
+	}
+
 	// If not configuring with a signing request
 	if a.Request.Raw == nil {
 		// Hosts

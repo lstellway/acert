@@ -67,6 +67,11 @@ func (a *Acert) BuildCertificate(isCa bool) []byte {
 		a.PublicKey = a.PrivateKey.(crypto.Signer).Public()
 	}
 
+	// Try to set a common name if one is not set
+	if a.Subject.CommonName == "" && len(a.Hosts) > 0 {
+		a.Subject.CommonName = a.Hosts[0]
+	}
+
 	// Other certificate properties
 	a.GenerateSerialNumber()
 	a.Certificate.NotBefore = now
@@ -153,15 +158,19 @@ func (a *Acert) DecorateCertificateFromRequest() {
 
 	// SAN
 	for _, value := range a.Request.DNSNames {
+		a.Hosts = append(a.Hosts, value)
 		a.Certificate.DNSNames = append(a.Certificate.DNSNames, value)
 	}
 	for _, value := range a.Request.IPAddresses {
+		a.Hosts = append(a.Hosts, value.String())
 		a.Certificate.IPAddresses = append(a.Certificate.IPAddresses, value)
 	}
 	for _, value := range a.Request.EmailAddresses {
+		a.Hosts = append(a.Hosts, value)
 		a.Certificate.EmailAddresses = append(a.Certificate.EmailAddresses, value)
 	}
 	for _, value := range a.Request.URIs {
+		a.Hosts = append(a.Hosts, value.Host)
 		a.Certificate.URIs = append(a.Certificate.URIs, value)
 	}
 }
