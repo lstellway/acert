@@ -37,7 +37,7 @@
 	Be sure to check if your use case supports ED25519.
 	For example, ED25519 was introduced in TLS v1.3, which is only supported by a subset of browsers.
 */
-package acert
+package main
 
 import (
 	"os"
@@ -55,16 +55,16 @@ func main() {
 	}, os.Args[1:]...)
 
 	switch getArgument(true) {
+	case "cert", "certificate", "client":
+		certificate(args...)
 	case "ca", "authority":
-		CertificateAuthority(args...)
-	case "cert", "certificate":
-		Certificate(args...)
+		certificateAuthority(args...)
 	case "csr", "request":
-		CertificateRequest(args...)
+		certificateRequest(args...)
 	case "trust":
-		TrustCertificate(args...)
+		trustCertificates(args...)
 	case "verify":
-		VerifyCertificate(args...)
+		verifyCertificate(args...)
 	default:
 		cmd.Usage()
 	}

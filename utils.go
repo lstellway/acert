@@ -1,7 +1,9 @@
-package acert
+package main
 
 import (
 	"bufio"
+	"crypto"
+	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"os"
@@ -65,17 +67,17 @@ func getOutputPath(name string) string {
 }
 
 // FileExists checks if a file exists
-func FileExists(name string) bool {
+func fileExists(name string) bool {
 	_, err := os.Stat(name)
 	return err == nil
 }
 
 // RequireFileValue checks that a string variable contains a path
 // to a file that exists on the filesystem.
-func RequireFileValue(value *string, name string) {
+func requireFileValue(value *string, name string) {
 	*value = strings.TrimSpace(*value)
 
-	if *value == "" || !FileExists(*value) {
+	if *value == "" || !fileExists(*value) {
 		message := fmt.Sprintf("File for '%s' argument not found: %s", name, *value)
 		exit(1, message)
 	}
@@ -84,7 +86,7 @@ func RequireFileValue(value *string, name string) {
 // SaveFile saves a file to the filesystem with a specified name
 // and specified permissions.
 // There is an option to determine whether or not to report success.
-func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
+func saveFile(name string, data []byte, permissions os.FileMode, report bool) {
 	// Write to filesystem
 	err := os.WriteFile(name, data, permissions)
 	exitOnError(err, "Could not save file:", name)
@@ -96,7 +98,7 @@ func SaveFile(name string, data []byte, permissions os.FileMode, report bool) {
 
 // SplitValue splits a string value by a delimiter and returns a string array with the values.
 // Values are trimmed of whitespace and empty values are ignored.
-func SplitValue(value string, delimiter string) []string {
+func splitValue(value string, delimiter string) []string {
 	var values []string
 
 	for _, val := range strings.Split(value, delimiter) {
@@ -111,7 +113,7 @@ func SplitValue(value string, delimiter string) []string {
 
 // PromptForInput prints a message to the console.
 // The script will then return the user's input from stdin.
-func PromptForInput(message string) (string, error) {
+func promptForInput(message string) (string, error) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print(message)
 	return reader.ReadString('\n')
@@ -119,11 +121,11 @@ func PromptForInput(message string) (string, error) {
 
 // ForceStringInput will repeatedly prompt a user for input
 // until a non-empty string value is inputted.
-func ForceStringInput(variable *string, message string) string {
+func forceStringInput(variable *string, message string) string {
 	val := ""
 
 	for strings.TrimSpace(*variable) == "" {
-		val, _ := PromptForInput(message)
+		val, _ := promptForInput(message)
 		*variable = strings.TrimSpace(val)
 	}
 
@@ -131,14 +133,14 @@ func ForceStringInput(variable *string, message string) string {
 }
 
 // ReadFile returns the byte contents of a specified file
-func ReadFile(file string) []byte {
+func readFile(file string) []byte {
 	data, err := os.ReadFile(file)
 	exitOnError(err, "Could not read file:", file)
 	return data
 }
 
 // PemEncode PEM-encodes an input byte array of a specified type.
-func PemEncode(name string, data []byte) []byte {
+func pemEncode(name string, data []byte) []byte {
 	return pem.EncodeToMemory(&pem.Block{
 		Type:  name,
 		Bytes: data,
@@ -147,7 +149,7 @@ func PemEncode(name string, data []byte) []byte {
 
 // PemDecode decodes a PEM-encoded file of a specified type.
 // Multiple types can be passed, each of which is considered valid.
-func PemDecode(bytes []byte, types ...string) []byte {
+func pemDecode(bytes []byte, types ...string) []byte {
 	// Decode PEM
 	data, _ := pem.Decode(bytes)
 	if data == nil {
@@ -173,7 +175,79 @@ func PemDecode(bytes []byte, types ...string) []byte {
 }
 
 // ParsePemFile parses the contents of specified PEM-encoded file
-func ParsePemFile(file string, types ...string) []byte {
-	pem := ReadFile(file)
-	return PemDecode(pem, types...)
+func parsePemFile(file string, types ...string) []byte {
+	pem := readFile(file)
+	return pemDecode(pem, types...)
+}
+
+// ParsePemCertificate reads a specified PEM-encoded
+// certificate file and parses it into a x509.Certificate object
+func parsePemCertificate(file string) *x509.Certificate {
+	data := parsePemFile(file, "CERTIFICATE")
+	cert, err := x509.ParseCertificate(data)
+	exitOnError(err, "Invalid certificate: ", file)
+	return cert
+}
+
+// ParsePemCertificateRequest reads a specified PEM-encoded
+// certificate request file and parses it into a x509.CertificateRequest object
+func parsePemCertificateRequest(file string) *x509.CertificateRequest {
+	data := parsePemFile(file, "CERTIFICATE REQUEST", "NEW CERTIFICATE REQUEST")
+	cert, err := x509.ParseCertificateRequest(data)
+	exitOnError(err, "Invalid certificate request file: ", file)
+	return cert
+}
+
+// ParsePemPrivateKey reads a specified PEM-encoded
+// private key file and parses it into a crypto.PrivateKey object
+func parsePemPrivateKey(file string) crypto.PrivateKey {
+	data := parsePemFile(file, "PRIVATE KEY")
+	cert, err := x509.ParsePKCS8PrivateKey(data)
+	exitOnError(err, "Invalid private key file: ", file)
+	return cert
+}
+
+// Get private key PKCS #8
+func privateKeyPkcs(privateKey crypto.PrivateKey) []byte {
+	key, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	exitOnError(err, "Error occurred while getting ca private key PKCS #8. ", err)
+	return key
+}
+
+// Save PEM-encoded file
+func savePemFile(name string, data []byte) {
+	saveFile(getOutputPath(name), data, 0644, true)
+}
+
+// saveCertificateFiles saves PEM-encoded certificate files
+func saveCertificatePem(name string, bytes []byte, trust bool) {
+	certificatePem := pemEncode("CERTIFICATE", bytes)
+	savePemFile(name+".cert.pem", certificatePem)
+
+	if parent != "" {
+		// Save chain
+		chainPem := readFile(parent)
+		savePemFile(name+".chain.pem", chainPem)
+
+		// Save full-chain
+		fullchainPem := append(certificatePem, chainPem...)
+		savePemFile(name+".fullchain.pem", fullchainPem)
+	}
+
+	// Trust certificate
+	if trust {
+		Trust(getOutputPath(name + ".cert.pem"))
+	}
+}
+
+// saveCertificateRequestFile saves PEM-encoded certificate request file
+func saveCertificateRequestPem(name string, request []byte) {
+	pem := pemEncode("CERTIFICATE REQUEST", request)
+	savePemFile(name+".csr.pem", pem)
+}
+
+// savePrivateKeyFile saves PEM-encoded private key file
+func savePrivateKeyPem(name string, privateKey crypto.PrivateKey) {
+	pem := pemEncode("PRIVATE KEY", privateKeyPkcs(privateKey))
+	savePemFile(name+".key.pem", pem)
 }
