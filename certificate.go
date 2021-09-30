@@ -7,6 +7,9 @@ import (
 // buildAcertCertificate configures an Acert object,
 // builds a certificate and saves the resulting files
 func buildAcertCertificate(a *Acert, isCa bool) {
+	// Validate output directory
+	requireFileValue(&outputDirectory, "output")
+
 	// Map CLI options
 	configureAcert(a)
 
@@ -24,6 +27,9 @@ func buildAcertCertificate(a *Acert, isCa bool) {
 // certificateCommandOptions wires up common options for
 // commands that are used to build a certificate.
 func certificateCommandOptions(h *command.Command, isCa bool, isCsr bool) {
+	h.AddSection("General Options", func(s *command.CommandSection) {
+		generalFlags(s)
+	})
 	h.AddSection("Subject Name Options", func(s *command.CommandSection) {
 		certificateSubjectFlags(s)
 	})
@@ -90,6 +96,9 @@ func certificateRequest(flags ...string) {
 	case "sign":
 		// Initialize command
 		cmd, args = command.NewCommand(commandName("request sign"), "Create a PKI certificate from a signing request", func(h *command.Command) {
+			h.AddSection("General Options", func(s *command.CommandSection) {
+				generalFlags(s)
+			})
 			h.AddSection("Certificate", func(s *command.CommandSection) {
 				certificateBuildFlags(s)
 			})
@@ -115,6 +124,9 @@ func certificateRequest(flags ...string) {
 			}, false)
 		}
 	default:
+		// Validate output directory
+		requireFileValue(&outputDirectory, "output")
+
 		// Build certificate signing request
 		a := Acert{}
 		configureAcert(&a)

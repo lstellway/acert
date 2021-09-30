@@ -3,22 +3,29 @@ package main
 import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/lstellway/go/command"
 )
 
 var (
 	// General
-	bits, days, pathLenConstraint int
-	trust                         bool
+	outputDirectory, _ = os.Getwd()
 
-	// Elliptic curve cryptography
+	// Certificate
+	days, pathLenConstraint int
+	now                     = time.Now()
+	trust                   bool
+
+	// Private key
+	bits               int
 	isEcdsa, isEd25519 bool
 	curve              string
 
-	// File paths
-	parent, key, csr string
+	// Parent
+	parent, key string
 
 	// Certificate subject
 	country, province, locality, streetAddress, postalCode string
@@ -29,6 +36,10 @@ var (
 	// Verify options
 	hosts, root, intermediate string
 )
+
+func generalFlags(h *command.CommandSection) {
+	h.StringVar(&outputDirectory, "output", outputDirectory, "Path to directory to save files to")
+}
 
 // Flags used to build the certificate subject
 func certificateSubjectFlags(h *command.CommandSection) {

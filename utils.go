@@ -9,18 +9,14 @@ import (
 	"os"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/lstellway/go/command"
 )
 
 var (
-	basename            = "acert"
-	args                []string
-	cmd                 command.Command
-	now                 = time.Now()
-	outputDirectory     string
-	workingDirectory, _ = os.Getwd()
+	basename = "acert"
+	args     []string
+	cmd      command.Command
 )
 
 // Package logger
