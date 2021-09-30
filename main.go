@@ -45,7 +45,7 @@ import (
 	"github.com/lstellway/go/command"
 )
 
-var version = "development"
+var Version = "development"
 
 func main() {
 	cmd, args = command.NewCommand(basename, "", func(h *command.Command) {
@@ -69,7 +69,7 @@ func main() {
 	case "verify":
 		verifyCertificate(args...)
 	case "version":
-		log("Acert version:", version)
+		log("Acert version:", Version)
 	default:
 		cmd.Usage()
 	}
