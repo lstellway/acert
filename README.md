@@ -150,8 +150,6 @@ Examples:
 
 **Motivation:**
 
-The [pi-hole docker](https://github.com/pi-hole/docker-pi-hole/) project transitioned to using a format version based on the date in their [`2021.09`](https://github.com/pi-hole/docker-pi-hole/releases/tag/2021.09) release.<br />
-This format holds more meaningful information (release date) than incrementing numbers and can be useful for tracking changes.<br />
-As mentioned in their release notes, this may not work well if a major (backward-incompatible) update needs to be shipped.<br />
-Their solution for this is to wait until the start of a new month to ship major updates.<br />
-The scope of this project is fairly limited, so I believe this versioning format should work just fine.
+The [pi-hole docker](https://github.com/pi-hole/docker-pi-hole/) project transitioned to using a format version based on the date in their [`2021.09`](https://github.com/pi-hole/docker-pi-hole/releases/tag/2021.09) release. This format holds more meaningful information (release date) than incrementing numbers and can be useful for tracking changes.
+
+As mentioned in their release notes, this may not work well if a major (backward-incompatible) update needs to be shipped. Their solution for this is to wait until the start of a new month to ship major updates. The scope of this project is fairly limited, so I believe this versioning format should work just fine.
