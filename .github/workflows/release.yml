@@ -1,0 +1,57 @@
+name: Release Version
+
+on:
+    release:
+        types:
+            - published
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-go@v2
+              with:
+                  go-version: "^1.16"
+            - name: Build binaries
+              run: |
+                  export ACERT_VERSION=$(git describe --tags)
+                  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "acert-${ACERT_VERSION}-linux-amd64" -ldflags "-X main.Version=${ACERT_VERSION}"
+                  CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -o "acert-${ACERT_VERSION}-linux-arm" -ldflags "-X main.Version=${ACERT_VERSION}"
+                  CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o "acert-${ACERT_VERSION}-linux-arm64" -ldflags "-X main.Version=${ACERT_VERSION}"
+                  CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o "acert-${ACERT_VERSION}-darwin-amd64" -ldflags "-X main.Version=${ACERT_VERSION}"
+                  CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o "acert-${ACERT_VERSION}-windows-amd64.exe" -ldflags "-X main.Version=${ACERT_VERSION}"
+            - name: Upload binaries
+              uses: actions/github-script@v3
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  script: |
+                      const fs = require("fs");
+
+                      // Get context
+                      const { repo: { owner, repo } } = context;
+                      const release = await github.repos.getReleaseByTag({
+                          owner,
+                          repo,
+                          tag: process.env.GITHUB_REF.replace("refs/tags/", ""),
+                      });
+
+                      // Get files to upload
+                      const files = fs
+                          .readdirSync(".")
+                          .filter((name) => name.indexOf("acert") === 0 && !name.match(/\.go$/));
+
+                      // Upload files
+                      console.log("Uploading binaries...");
+                      await Promise.all(
+                          files.map((name) =>
+                              github.repos.uploadReleaseAsset({
+                                  owner,
+                                  repo,
+                                  release_id: release.data.id,
+                                  name,
+                                  data: fs.readFile(name),
+                              })
+                          )
+                      );
+                      console.log("All files uploaded successfully.");
