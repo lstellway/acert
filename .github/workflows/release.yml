@@ -21,6 +21,8 @@ jobs:
                   CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o "acert-${ACERT_VERSION}-linux-arm64" -ldflags "-X main.Version=${ACERT_VERSION}"
                   CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o "acert-${ACERT_VERSION}-darwin-amd64" -ldflags "-X main.Version=${ACERT_VERSION}"
                   CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o "acert-${ACERT_VERSION}-windows-amd64.exe" -ldflags "-X main.Version=${ACERT_VERSION}"
+            - name: Compress binaries
+              run: for f in ./acert-*; do tar -zcf "${f}.tar.gz" "${f}" && zip "${f}.zip" "${f}"; done
             - name: Upload binaries
               uses: actions/github-script@v3
               with:
@@ -41,7 +43,7 @@ jobs:
                           .readdir(".")
                           .then((files) =>
                               files.filter(
-                                  (name) => name.indexOf("acert") === 0 && !name.match(/\.go$/)
+                                  (name) => name.match(/\.tar\.gz$/) || name.match(/\.zip$/)
                               )
                           );
 
