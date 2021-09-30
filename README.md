@@ -56,3 +56,102 @@ _(eg, ED25519 was introduced in TLS v1.3, which is only [supported by a subset o
 <br />
 
 ## Installation
+
+<br />
+
+**Prebuilt Binaries**
+
+You can download pre-built binaries for your operating system on the [Releases page](https://github.com/lstellway/acert/releases).
+
+<br />
+
+**Homebrew**
+
+The `acert` package is included in the `lstellway/formulae` tap.
+To install with homebrew, tap the tap:
+
+```sh
+brew tap lstellway/formulae
+```
+
+Update taps and install the formula:
+
+```sh
+brew update \
+    && brew install lstellway/formulae/acert
+```
+
+Optionally test the installation:
+
+```sh
+brew test lstellway/formulae/acert
+```
+
+...and enjoy the brew 🍻
+
+<br />
+
+**Build From Source**
+
+To build from source, download the repository and use the `go build [OPTIONS...]` command.
+
+```sh
+git clone https://github.com/lstellway/acert.git \
+    && cd acert \
+    && go build -ldflags "-X 'main.Version=$(git describe --tags)' -X 'main.ReleaseDate=$(git log -1 --format=%ai $(git describe --tags) | cat)'"
+```
+
+This will output the `acert` binary in the directory.
+Be sure to move it into a directory included in your `PATH` environment variable.
+
+<br />
+
+## Usage
+
+<br />
+
+Run the `help` command to see available commands and options.
+
+```sh
+acert help
+```
+
+_More help documentation coming soon..._
+
+<br />
+
+## Versioning
+
+<br />
+
+To show the current version of `acert`, run:
+
+```sh
+acert version
+```
+
+<br />
+
+**Format**
+
+Versions will be in the `year.month[.revision][-stage]` format.
+
+Examples:
+
+```sh
+2021.9.1
+2021.10.1-alpha
+2021.10.1-beta
+2021.10.1-rc
+...
+```
+
+<br />
+
+**Motivation:**
+
+The [pi-hole docker](https://github.com/pi-hole/docker-pi-hole/) project transitioned to using a format version based on the date in their [`2021.09`](https://github.com/pi-hole/docker-pi-hole/releases/tag/2021.09) release.
+This format holds more meaningful information (release date) than incrementing numbers and can be useful for tracking changes.
+As mentioned in their release notes, this may not work well if a major (backward-incompatible) update needs to be shipped.
+Their solution for this is to wait until the start of a new month to ship major updates.
+The scope of this project is fairly limited, so I believe this versioning format should work just fine.
