@@ -45,6 +45,8 @@ import (
 	"github.com/lstellway/go/command"
 )
 
+var version = "development"
+
 func main() {
 	cmd, args = command.NewCommand(basename, "", func(h *command.Command) {
 		h.AddSubcommand("authority", "Create a PKI certificate authority")
@@ -52,6 +54,7 @@ func main() {
 		h.AddSubcommand("request", "Create a PKI certificate signing request")
 		h.AddSubcommand("trust", "Trust a PKI certificate")
 		h.AddSubcommand("verify", "Verify a PKI certificate")
+		h.AddSubcommand("version", "Show Acert version information")
 	}, os.Args[1:]...)
 
 	switch getArgument(true) {
@@ -65,6 +68,8 @@ func main() {
 		trustCertificates(args...)
 	case "verify":
 		verifyCertificate(args...)
+	case "version":
+		log("Acert version:", version)
 	default:
 		cmd.Usage()
 	}
