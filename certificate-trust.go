@@ -13,7 +13,8 @@ import (
 // TrustDarwin trust a PKI certificate on macOS (Darwin)
 func TrustDarwin(cert string) {
 	cmd := exec.Command("sudo", "security", "add-trusted-cert", "-d", "-r", "trustRoot", "-k", "/Library/Keychains/System.keychain", cert)
-	cmd.Run()
+	err := cmd.Run()
+	exitOnError(err)
 }
 
 // TrustLinux trust a PKI certificate on Linux
