@@ -134,9 +134,7 @@ acert version
 
 **Format**
 
-Versions will be in the `year.month[.revision][-stage]` format.
-
-Examples:
+Versions will be in the `year.month[.revision][-stage]` format. Examples:
 
 ```sh
 2021.9.1
@@ -148,8 +146,12 @@ Examples:
 
 <br />
 
-**Motivation:**
+## Resources
 
-The [pi-hole docker](https://github.com/pi-hole/docker-pi-hole/) project transitioned to using a format version based on the date in their [`2021.09`](https://github.com/pi-hole/docker-pi-hole/releases/tag/2021.09) release. This format holds more meaningful information (release date) than incrementing numbers and can be useful for tracking changes.
-
-As mentioned in their release notes, this may not work well if a major (backward-incompatible) update needs to be shipped. Their solution for this is to wait until the start of a new month to ship major updates. The scope of this project is fairly limited, so I believe this versioning format should work just fine.
+-   [Mozilla SSL Configuration Generator](https://ssl-config.mozilla.org/)
+    -   Put your certificates to work! This tool will help you build SSL configurations for many popular software.
+-   Wikipedia
+    -   [Public Key Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure)
+    -   [RSA (cryptosystem)](<https://en.wikipedia.org/wiki/RSA_(cryptosystem)>)
+    -   [Elliptic Curve Digital Signature Algorithm(ECDSA)](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm)
+    -   [Curve25519](https://en.wikipedia.org/wiki/Curve25519)
