@@ -53,7 +53,7 @@ var (
 func main() {
 	cmd, args = command.NewCommand(basename, "", func(h *command.Command) {
 		h.AddSubcommand("authority", "Create a PKI certificate authority")
-		h.AddSubcommand("certificate", "Create a PKI certificate")
+		h.AddSubcommand("client", "Create a PKI certificate")
 		h.AddSubcommand("request", "Create a PKI certificate signing request")
 		h.AddSubcommand("trust", "Trust a PKI certificate")
 		h.AddSubcommand("verify", "Verify a PKI certificate")

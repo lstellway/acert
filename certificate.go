@@ -58,7 +58,7 @@ func certificateCommandOptions(h *command.Command, isCa bool, isCsr bool) {
 // certificate handles command-line input arguments to create a PKI certificate
 func certificate(flags ...string) {
 	// Initialize command
-	cmd, args = command.NewCommand(commandName("certificate"), "Create a PKI certificate", func(h *command.Command) {
+	cmd, args = command.NewCommand(commandName("client"), "Create a PKI certificate", func(h *command.Command) {
 		certificateCommandOptions(h, false, false)
 		h.AddSubcommand("help", "Display this help screen")
 	}, flags...)
