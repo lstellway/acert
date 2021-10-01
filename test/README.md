@@ -32,13 +32,13 @@ Build and trust a certificate authority _(may prompt for password)_
 acert authority -trust -san 'acert-local-root'
 ```
 
-Build and sign a client certificate using the host name "test.local"
+Use your new authority to build and sign a client certificate using the host name `test.local`
 
 ```sh
 acert client -parent acert-local-root.ca.cert.pem -key acert-local-root.ca.key.pem -san 'test.local,*.test.local'
 ```
 
-Append an entry for "test.local" in your hosts file
+Append an entry for `test.local` in your hosts file
 
 ```sh
 sudo -- sh -c -e "printf '\n127.0.0.1 test.local' >> /etc/hosts"
@@ -50,4 +50,11 @@ Run the `nginx` service defined in the [`docker-compose.yml`](./docker-compose.y
 docker-compose up -d
 ```
 
-Restart your browser to ensure the new certificate authority is recognized and navigate to [https://test.local](https://test.local) in your browser.
+Restart your browser to ensure the new certificate authority is recognized and navigate to [https://test.local](https://test.local) in your browser.<br />
+You should see a lock icon 🔒 in the address bar next to the host name.
+
+Don't forget to clean up the docker containers!
+
+```sh
+docker-compose down
+```
