@@ -110,10 +110,34 @@ Be sure to move it into a directory included in your `PATH` environment variable
 
 <br />
 
-Run the `help` command to see available commands and options.
+```sh
+# Build a self-signed certificate authority with "local-root" as the subject alternative name
+acert authority -san 'local-root'
+
+# Use ECDSA elliptic curves 
+acert authority -ecdsa -san 'local-root'
+
+# Trust the authority certificate
+acert trust local-root.ca.cert.pem
+
+# Create a certificate chain by signing another authority
+acert authority -parent local-root.ca.cert.pem -key local-root.ca.key.pem -san 'local-intermediate'
+
+# Sign a client certificate with the intermediate certificate
+acert client -parent local-intermediate.ca.cert.pem -key local-intermediate.ca.key.pem -san 'test.com,*.test.com'
+
+# Verify that the certificate is setup as expected
+acert verify -root local-root.ca.cert.pem -intermediate local-intermediate.ca.cert.pem -hosts 'test.com,*.test.com' test.com.cert.pem
+```
+
+If you ever need help with a command, simply run the `help` subcommand:
 
 ```sh
+# Main help page
 acert help
+
+# Authority help page
+acert authority help
 ```
 
 _More help documentation coming soon..._
