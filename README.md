@@ -137,7 +137,7 @@ acert version
 Versions will be in the `year.month[.revision][-stage]` format. Examples:
 
 ```sh
-2021.9.1
+2021.09.1
 2021.10.1-alpha
 2021.10.1-beta
 2021.10.1-rc
