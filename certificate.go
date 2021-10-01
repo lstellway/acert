@@ -13,14 +13,22 @@ func buildAcertCertificate(a *Acert, isCa bool) {
 	// Map CLI options
 	configureAcert(a)
 
-	// Build certificate and save certificate PEM files
+	// Build certificate
 	bytes := a.BuildCertificate(isCa)
-	saveCertificatePem(a.Subject.CommonName, bytes, trust)
+
+	// Build file base name
+	name := a.Subject.CommonName
+	if isCa {
+		name = name + ".ca"
+	}
+
+	// Save certificate PEM files
+	saveCertificatePem(name, bytes, trust)
 
 	// Private key may be nil when signing a request
 	// If there is a private key, save the PEM file
 	if a.PrivateKey != nil {
-		savePrivateKeyPem(a.Subject.CommonName, a.PrivateKey)
+		savePrivateKeyPem(name, a.PrivateKey)
 	}
 }
 
