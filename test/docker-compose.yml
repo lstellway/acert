@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+    nginx:
+        container_name: nginx
+        image: nginx:alpine
+        ports:
+            - 80:80
+            - 443:443
+        volumes:
+            - .:/etc/nginx/conf.d/
