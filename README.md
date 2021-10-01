@@ -140,6 +140,8 @@ acert help
 acert authority help
 ```
 
+A [`test/`](./test) directory has also been added with an example for testing your certificate with NGINX on Docker. 
+
 _More help documentation coming soon..._
 
 <br />
