@@ -33,8 +33,8 @@ A goal of this project is to make PKI simple and approachable.<br />
 
 Certificates can be signed using [ECDSA Elliptic Curves](https://pkg.go.dev/crypto/ecdsa):
 
-| Standard                                         | Description |
-| ------------------------------------------------ | ----------- |
+| Standard                                         | Description                                                            |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
 | [P-224](https://pkg.go.dev/crypto/elliptic#P224) | Uses a curve which "implements NIST P-224 (FIPS 186-3, section D.2.2)" |
 | [P-256](https://pkg.go.dev/crypto/elliptic#P256) | Uses a curve which "implements NIST P-256 (FIPS 186-3, section D.2.3)" |
 | [P-384](https://pkg.go.dev/crypto/elliptic#P384) | Uses a curve which "implements NIST P-384 (FIPS 186-3, section D.2.4)" |
