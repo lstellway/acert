@@ -34,10 +34,10 @@ Certificates can be signed using [ECDSA Elliptic Curves](https://pkg.go.dev/cryp
 
 | Standard                                         | Description |
 | ------------------------------------------------ | ----------- |
-| [P-224](https://pkg.go.dev/crypto/elliptic#P224) | P-224       |
-| [P-256](https://pkg.go.dev/crypto/elliptic#P256) | P-256       |
-| [P-384](https://pkg.go.dev/crypto/elliptic#P384) | P-384       |
-| [P-521](https://pkg.go.dev/crypto/elliptic#P521) | P-521       |
+| [P-224](https://pkg.go.dev/crypto/elliptic#P224) | Uses a curve which "implements NIST P-224 (FIPS 186-3, section D.2.2)" |
+| [P-256](https://pkg.go.dev/crypto/elliptic#P256) | Uses a curve which "implements NIST P-256 (FIPS 186-3, section D.2.3)" |
+| [P-384](https://pkg.go.dev/crypto/elliptic#P384) | Uses a curve which "implements NIST P-384 (FIPS 186-3, section D.2.4)" |
+| [P-521](https://pkg.go.dev/crypto/elliptic#P521) | Uses a curve which "implements NIST P-521 (FIPS 186-3, section D.2.5)" |
 
 _Note:_<br />
 _Be sure to check if the chosen elliptic curve is supported for your use case_<br />
