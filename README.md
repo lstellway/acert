@@ -8,7 +8,7 @@ Command-line utility for managing PKI certificates written in Go.
 
 <br />
 
-**Manage Your Public Key Infrastructure**
+**🔐 Manage Your Public Key Infrastructure**
 
 Perform many common tasks necessary for setting up your PKI infrastructure.
 
@@ -21,14 +21,14 @@ Perform many common tasks necessary for setting up your PKI infrastructure.
 
 <br />
 
-**Simple, Intuitive API**
+**✨ Simple, Intuitive API**
 
 A goal of this project is to make PKI simple and approachable.<br />
 _(Please don't hesitate to [submit an issue](https://github.com/lstellway/acert/issues) or [open a PR](https://github.com/lstellway/acert/pulls) with your suggestions)_
 
 <br />
 
-**ECDSA Elliptic Curve Support**
+**📈 ECDSA Elliptic Curve Support**
 
 Certificates can be signed using [ECDSA Elliptic Curves](https://pkg.go.dev/crypto/ecdsa):
 
@@ -45,7 +45,7 @@ _(eg, [Chrome 42.x does not support P-521](https://bugs.chromium.org/p/chromium/
 
 <br />
 
-**ED25519 Support**
+**📉 ED25519 Support**
 
 A certificate can be signed with a key using the [ED25519](https://pkg.go.dev/crypto/ed25519@go1.17.1) signature algorithm. <br />
 
