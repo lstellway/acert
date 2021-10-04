@@ -39,9 +39,8 @@ Certificates can be signed using [ECDSA Elliptic Curves](https://pkg.go.dev/cryp
 | [P-384](https://pkg.go.dev/crypto/elliptic#P384) | Uses a curve which "implements NIST P-384 (FIPS 186-3, section D.2.4)" |
 | [P-521](https://pkg.go.dev/crypto/elliptic#P521) | Uses a curve which "implements NIST P-521 (FIPS 186-3, section D.2.5)" |
 
-_Note:_<br />
-_Be sure to check if the chosen elliptic curve is supported for your use case_<br />
-_(eg, [Chrome 42.x does not support P-521](https://bugs.chromium.org/p/chromium/issues/detail?id=478225))_
+>_Be sure to check if the chosen elliptic curve is supported for your use case_<br />
+>_For example: [Chrome 42.x does not support P-521](https://bugs.chromium.org/p/chromium/issues/detail?id=478225)_
 
 <br />
 
@@ -49,9 +48,7 @@ _(eg, [Chrome 42.x does not support P-521](https://bugs.chromium.org/p/chromium/
 
 A certificate can be signed with a key using the [ED25519](https://pkg.go.dev/crypto/ed25519@go1.17.1) signature algorithm. <br />
 
-_Note:_<br />
-_Be sure to check if your use case supports ED25519 ([good reference](https://ianix.com/pub/ed25519-deployment.html))._<br />
-_(eg, ED25519 was introduced in TLS v1.3, which is only [supported by a subset of browsers](https://caniuse.com/tls1-3))_
+>_Be sure to check if your use case supports ED25519 ([good reference](https://ianix.com/pub/ed25519-deployment.html))._<br />
 
 <br />
 
