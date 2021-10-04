@@ -24,7 +24,8 @@ Perform many common tasks necessary for setting up your PKI infrastructure.
 **✨ Simple, Intuitive API**
 
 A goal of this project is to make PKI simple and approachable.<br />
-_(Please don't hesitate to [submit an issue](https://github.com/lstellway/acert/issues) or [open a PR](https://github.com/lstellway/acert/pulls) with your suggestions)_
+
+>_Please don't hesitate to [submit an issue](https://github.com/lstellway/acert/issues) or [open a pull request](https://github.com/lstellway/acert/pulls) with your suggestions_ 
 
 <br />
 
@@ -90,7 +91,8 @@ brew test lstellway/formulae/acert
 
 **Build From Source**
 
-To build from source, download the repository and use the `go build [OPTIONS...]` command.
+To build from source first [install and configure Go](https://golang.org/doc/install) on the system.<br />
+Then download the repository and use the `go build [OPTIONS...]` command to build the binary:
 
 ```sh
 git clone https://github.com/lstellway/acert.git \
