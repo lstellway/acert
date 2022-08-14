@@ -14,13 +14,7 @@ jobs:
               with:
                   go-version: "^1.16"
             - name: Build binaries
-              run: |
-                  export ACERT_VERSION=$(git describe --tags) RELEASE_DATE=$(git log -1 --format=%ai $(git describe --tags) | cat)
-                  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "acert-${ACERT_VERSION}-linux-amd64" -ldflags "-X 'main.Version=${ACERT_VERSION}' -X 'main.ReleaseDate=${RELEASE_DATE}'"
-                  CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -o "acert-${ACERT_VERSION}-linux-arm" -ldflags "-X 'main.Version=${ACERT_VERSION}' -X 'main.ReleaseDate=${RELEASE_DATE}'"
-                  CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o "acert-${ACERT_VERSION}-linux-arm64" -ldflags "-X 'main.Version=${ACERT_VERSION}' -X 'main.ReleaseDate=${RELEASE_DATE}'"
-                  CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o "acert-${ACERT_VERSION}-darwin-amd64" -ldflags "-X 'main.Version=${ACERT_VERSION}' -X 'main.ReleaseDate=${RELEASE_DATE}'"
-                  CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o "acert-${ACERT_VERSION}-windows-amd64.exe" -ldflags "-X 'main.Version=${ACERT_VERSION}' -X 'main.ReleaseDate=${RELEASE_DATE}'"
+              run: make build-platforms
             - name: Compress binaries
               run: for f in ./acert-*; do tar -zcf "${f}.tar.gz" "${f}" && zip "${f}.zip" "${f}"; done
             - name: Upload binaries
