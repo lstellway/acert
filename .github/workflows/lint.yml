@@ -1,22 +1,20 @@
 name: Lint Go Code
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches: [main]
 
 jobs:
-    lint:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-go@v2
-              with:
-                  stable: "false"
-                  go-version: "^1.16"
-            - name: golangci-lint
-              # Install golangci-lint
-              # https://golangci-lint.run/usage/install/#ci-installation
-              run: |
-                  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.42.1;
-                  golangci-lint run
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.17
+      # @see https://github.com/golangci/golangci-lint-action
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+
