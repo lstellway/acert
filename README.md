@@ -91,13 +91,16 @@ brew test lstellway/formulae/acert
 
 **Build From Source**
 
-To build from source first [install and configure Go](https://golang.org/doc/install) on the system.<br />
-Then download the repository and use the `go build [OPTIONS...]` command to build the binary:
+To build from source:
+
+1. [install and configure Go](https://golang.org/doc/install) on the system.
+2. Download the repository
+3. Run `make build` to build the binary:
 
 ```sh
 git clone https://github.com/lstellway/acert.git \
     && cd acert \
-    && go build -ldflags "-X 'main.Version=$(git describe --tags)' -X 'main.ReleaseDate=$(git log -1 --format=%ai $(git describe --tags) | cat)'"
+    && make build
 ```
 
 This will output the `acert` binary in the directory.<br />
